@@ -28,6 +28,7 @@ public class NewMonoBehaviourScript : MonoBehaviour
     void FixedUpdate()
     {
         Vector2 direction = (checkpoint.position - transform.position).normalized;
+        transform.right = checkpoint.position - transform.position;
         rb.linearVelocity = direction * movespeed;
     }
 }
