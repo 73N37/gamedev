@@ -5,7 +5,9 @@ public class NewMonoBehaviourScript : MonoBehaviour
     [SerializeField] private float movespeed = 2f;
 
     private Rigidbody2D rb;
-    [SerializeField] private Transform checkpoint;
+    private Transform checkpoint;
+
+    private int index = 0;
 
     void Awake()
     {
@@ -14,14 +16,17 @@ public class NewMonoBehaviourScript : MonoBehaviour
 
     void Start()
     {
-        
+        checkpoint = EnemyManager.main.checkpoints[index];
     }
 
     void Update()
     {
+        checkpoint = EnemyManager.main.checkpoints[index];
+
+
         if (Vector2.Distance(checkpoint.position, transform.position) < 0.1f)
         {
-            Debug.Log("Checkpoint reached!");
+            index++;
         }
     }
 
