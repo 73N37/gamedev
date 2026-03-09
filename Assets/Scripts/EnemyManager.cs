@@ -14,6 +14,7 @@ public class EnemyManager : MonoBehaviour
     private float enemyRate = 0.5f;
     private float fastEnemyRate = 0.7f;
     private float tankEnemyRate = 0.3f;
+    
     void Awake()
     {
         main = this;
@@ -45,14 +46,6 @@ public class EnemyManager : MonoBehaviour
         }
 
         StartCoroutine(Spawn());
-    }
+    }   
 
-    IEnumerator Spawn()
-    {
-        for (int i = 0; i < waveset.Count; i++)
-        {
-            Instantiate(waveset[i], spawnPoint.position, Quaternion.identity);
-            yield return new WaitForSeconds(1f);
-        }
-    }
 }
