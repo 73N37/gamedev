@@ -45,7 +45,7 @@ public class EnemyManager : MonoBehaviour
             waveset.Add(tankEnemy);
         }
 
-        StartCoroutine(Spawn());
+        //StartCoroutine(Spawn());
     }   
 
 }
