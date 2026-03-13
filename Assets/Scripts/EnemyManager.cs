@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -49,7 +50,15 @@ public class EnemyManager : MonoBehaviour
             waveset.Add(tankEnemy);
         }
 
-        //StartCoroutine(Spawn());
+        StartCoroutine(Spawn());
     }   
 
+IEnumerator Spawn()
+    {
+        for (int i = 0; i < waveset.Count; i++)
+        {
+            Instantiate(waveset[i], spawnPoint.position, Quaternion.identity);
+            yield return new WaitForSeconds(0.5f);
+        }
+    }
 }
