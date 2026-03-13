@@ -8,16 +8,101 @@ public class TowerRange : MonoBehaviour
 
     void Start()
     {
+        if (tower == null)
+        {
+            tower = GetComponentInParent<Tower>();
+        }
+
         UpdateRange();
     }
 
     void Update()
     {
-        
+        KeepRangeCentered();
+
+        if (tower == null)
+        {
+            return;
+        }
+
+        targets.RemoveAll(target => target == null);
+
+        if (targets.Count > 0)
+        {
+            tower.target = GetNearestTarget();
+        }
+        else
+        {
+            tower.target = null;
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Enemy"))
+        {
+            targets.Add(collision.gameObject);
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Enemy"))
+        {
+            targets.Remove(collision.gameObject);
+        }
     }
 
     public void UpdateRange()
     {
+        if (tower == null)
+        {
+            return;
+        }
+
+        KeepRangeCentered();
         transform.localScale = new Vector3(tower.Range, tower.Range, tower.Range);
+    }
+
+    private void LateUpdate()
+    {
+        KeepRangeCentered();
+    }
+
+    private void KeepRangeCentered()
+    {
+        if (tower == null)
+        {
+            return;
+        }
+
+        if (transform.parent == tower.transform)
+        {
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+        }
+        else
+        {
+            transform.position = tower.transform.position;
+            transform.rotation = Quaternion.identity;
+        }
+    }
+
+    private GameObject GetNearestTarget()
+    {
+        GameObject nearestTarget = targets[0];
+        float nearestDistance = Vector2.Distance(tower.transform.position, nearestTarget.transform.position);
+
+        for (int i = 1; i < targets.Count; i++)
+        {
+            float distance = Vector2.Distance(tower.transform.position, targets[i].transform.position);
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestTarget = targets[i];
+            }
+        }
+
+        return nearestTarget;
     }
 }
