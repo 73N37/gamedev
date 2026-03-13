@@ -16,9 +16,9 @@ public class EnemyManager : MonoBehaviour
     private int tankEnemyCount;
     private List<GameObject> waveset;
 
-    private float enemyRate = 0.5f;
-    private float fastEnemyRate = 0.7f;
-    private float tankEnemyRate = 0.3f;
+    [SerializeField] private float enemyRate = 0.5f;
+    [SerializeField] private float fastEnemyRate = 0.7f;
+    [SerializeField] private float tankEnemyRate = 0.3f;
     
     void Awake()
     {
