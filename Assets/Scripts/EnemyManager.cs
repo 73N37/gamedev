@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemyManager : MonoBehaviour
@@ -10,6 +11,9 @@ public class EnemyManager : MonoBehaviour
     [SerializeField] private GameObject fastEnemy;
     [SerializeField] private GameObject tankEnemy;
     [SerializeField] private int enemyCount = 6;
+    private int fastEnemyCount;
+    private int tankEnemyCount;
+    private List<GameObject> waveset;
 
     private float enemyRate = 0.5f;
     private float fastEnemyRate = 0.7f;
