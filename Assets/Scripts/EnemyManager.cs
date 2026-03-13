@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,15 +11,13 @@ public class EnemyManager : MonoBehaviour
     [SerializeField] private GameObject enemy;
     [SerializeField] private GameObject fastEnemy;
     [SerializeField] private GameObject tankEnemy;
+    [SerializeField] private int totalWaves = 3;
     [SerializeField] private int enemyCount = 6;
-    private int fastEnemyCount;
-    private int tankEnemyCount;
-    private List<GameObject> waveset;
+    [SerializeField] private int fastEnemyCount = 2;
+    [SerializeField] private int tankEnemyCount = 1;
+    [SerializeField] private float spawnDelay = 0.5f;
+    [SerializeField] private float timeBetweenWaves = 2f;
 
-    private float enemyRate = 0.5f;
-    private float fastEnemyRate = 0.7f;
-    private float tankEnemyRate = 0.3f;
-    
     void Awake()
     {
         main = this;
@@ -26,30 +25,66 @@ public class EnemyManager : MonoBehaviour
 
     void Start()
     {
-        SetWave();
+        StartCoroutine(SpawnWaves());
     }
 
-    private void SetWave()
+    private IEnumerator SpawnWaves()
     {
-        enemyCount = Mathf.RoundToInt(enemyRate + enemyCount);
-        fastEnemyCount = Mathf.RoundToInt(fastEnemyRate + enemyCount);
-        tankEnemyCount = Mathf.RoundToInt(tankEnemyRate + enemyCount);
-
-        waveset = new List<GameObject>();
-        for (int i = 0; i < enemyCount; i++)
+        for (int waveNumber = 0; waveNumber < totalWaves; waveNumber++)
         {
-            waveset.Add(enemy);
+            List<GameObject> waveSet = BuildWave(waveNumber);
+            yield return StartCoroutine(SpawnWave(waveSet));
+
+            if (waveNumber < totalWaves - 1)
+            {
+                yield return new WaitForSeconds(timeBetweenWaves);
+            }
         }
-        for (int i = 0; i < fastEnemyCount; i++)
+    }
+
+    private List<GameObject> BuildWave(int waveNumber)
+    {
+        int currentEnemyCount = enemyCount + waveNumber;
+        int currentFastEnemyCount = fastEnemyCount + waveNumber;
+        int currentTankEnemyCount = tankEnemyCount + waveNumber;
+
+        List<GameObject> waveSet = new List<GameObject>();
+
+        for (int i = 0; i < currentEnemyCount; i++)
         {
-            waveset.Add(fastEnemy);
-        }
-        for (int i = 0; i < tankEnemyCount; i++)
-        {
-            waveset.Add(tankEnemy);
+            waveSet.Add(enemy);
         }
 
-        //StartCoroutine(Spawn());
-    }   
+        for (int i = 0; i < currentFastEnemyCount; i++)
+        {
+            waveSet.Add(fastEnemy);
+        }
 
+        for (int i = 0; i < currentTankEnemyCount; i++)
+        {
+            waveSet.Add(tankEnemy);
+        }
+
+        return waveSet;
+    }
+
+    private IEnumerator SpawnWave(List<GameObject> waveSet)
+    {
+        if (spawnPoint == null)
+        {
+            Debug.LogError("Spawn point is not set on EnemyManager.", this);
+            yield break;
+        }
+
+        for (int i = 0; i < waveSet.Count; i++)
+        {
+            if (waveSet[i] == null)
+            {
+                continue;
+            }
+
+            Instantiate(waveSet[i], spawnPoint.position, Quaternion.identity);
+            yield return new WaitForSeconds(spawnDelay);
+        }
+    }
 }
