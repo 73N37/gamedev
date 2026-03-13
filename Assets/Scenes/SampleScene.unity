@@ -163,12 +163,12 @@ MonoBehaviour:
   - {fileID: 1206381685}
   spawnPoint: {fileID: 476666668}
   enemy: {fileID: 953847540}
-  fastEnemy: {fileID: 1156158106}
-  tankEnemy: {fileID: 783999572}
-  totalWaves: 1
   enemyCount: 2
-  fastEnemyCount: 0
-  tankEnemyCount: 0
+  fastEnemy: {fileID: 1156158106}
+  fastEnemyCount: 1
+  tankEnemy: {fileID: 783999572}
+  tankEnemyCount: 1
+  totalWaves: 1
   spawnDelay: 0.5
   timeBetweenWaves: 2
 --- !u!4 &327998316

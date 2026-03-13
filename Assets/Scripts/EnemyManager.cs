@@ -8,13 +8,13 @@ public class EnemyManager : MonoBehaviour
     public Transform[] checkpoints;
     public Transform spawnPoint;
 
+    [Header("Basic Enemy settings")]
+    [SerializeField] private GameObject basicEnemy;
+    [SerializeField] private int basicEnemyCount = 2;
+
     [Header("Fast Enemy settings")]
     [SerializeField] private GameObject fastEnemy;
     [SerializeField] private int fastEnemyCount = 2;
-
-    [Header("Basic Enemy settings")]
-    [SerializeField] private GameObject enemy;
-    [SerializeField] private int enemyCount = 2;
 
     [Header("Tank Enemy settings")]
     [SerializeField] private GameObject tankEnemy;
@@ -46,7 +46,7 @@ private void Update()
             enemies.Length == 0
         )
         {
-            enemyCount += Mathf.RoundToInt(enemyCount * spawnDelay);
+            basicEnemyCount += Mathf.RoundToInt(basicEnemyCount * spawnDelay);
             SpawnWaves();
         }
     }
@@ -67,14 +67,14 @@ private void Update()
 
     private List<GameObject> BuildWave(int waveNumber)
     {
-        int currentEnemyCount = enemyCount + waveNumber;
+        int currentBasicEnemyCount = basicEnemyCount + waveNumber;
         int currentFastEnemyCount = fastEnemyCount + waveNumber;
         int currentTankEnemyCount = tankEnemyCount + waveNumber;
 
         List<GameObject> waveSet = new List<GameObject>();
 
-        for (int i = 0; i < currentEnemyCount; i++) {
-            waveSet.Add(enemy);
+        for (int i = 0; i < currentBasicEnemyCount; i++) {
+            waveSet.Add(basicEnemy);
         }
 
         for (int i = 0; i < currentFastEnemyCount; i++) {
