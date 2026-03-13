@@ -7,6 +7,8 @@ public class Tower : MonoBehaviour
 
     [SerializeField] private float damage = 1f;
 
+    public float Range => range;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
