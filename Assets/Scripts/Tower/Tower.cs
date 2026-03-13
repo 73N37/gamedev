@@ -3,9 +3,10 @@ using UnityEngine;
 public class Tower : MonoBehaviour
 {
     [SerializeField] private float range = 8f;
-    [SerializeField] private float fireRate = 34f;
+    [SerializeField] private float fireRate = 1.2f;
+    [SerializeField] private Transform towerRoot;
 
-    [SerializeField] private float damage = 1f;
+    [SerializeField] private int damage = 37;
     [SerializeField] private Transform rotatePart;
 
     public float Range => range;
@@ -18,6 +19,11 @@ public class Tower : MonoBehaviour
 
     void Awake()
     {
+        if (towerRoot == null)
+        {
+            towerRoot = transform;
+        }
+
         startPosition = transform.position;
         startRotation = transform.rotation;
         rb = GetComponent<Rigidbody2D>();
@@ -32,6 +38,7 @@ public class Tower : MonoBehaviour
 
     void Update()
     {
+        startPosition = towerRoot.position;
         transform.position = startPosition;
         transform.rotation = startRotation;
 
