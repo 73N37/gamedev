@@ -301,6 +301,63 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!1 &327998314
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 327998316}
+  - component: {fileID: 327998315}
+  m_Layer: 0
+  m_Name: EnemyManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &327998315
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 327998314}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 195f0a3f974f85d4da1a8cf2a8a85366, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  checkpoints:
+  - {fileID: 919357350}
+  - {fileID: 1931876202}
+  - {fileID: 2041396787}
+  - {fileID: 22142494}
+  - {fileID: 684080729}
+  - {fileID: 1912565725}
+  - {fileID: 1206381685}
+  spawnPoint: {fileID: 476666668}
+  enemy: {fileID: 953847540}
+  fastEnemy: {fileID: 1156158106}
+  tankEnemy: {fileID: 1613108498}
+  enemyCount: 6
+--- !u!4 &327998316
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 327998314}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &386196773
 GameObject:
   m_ObjectHideFlags: 0
@@ -1142,7 +1199,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc3e655186a82a34c83f5cf7be5de4b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
-  movespeed: 4
+  movespeed: 3
 --- !u!50 &1156158108
 Rigidbody2D:
   serializedVersion: 5
@@ -1367,6 +1424,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc3e655186a82a34c83f5cf7be5de4b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
+  movespeed: 2
 --- !u!50 &1613108500
 Rigidbody2D:
   serializedVersion: 5
@@ -1891,6 +1949,7 @@ SceneRoots:
   m_Roots:
   - {fileID: 519420032}
   - {fileID: 619394802}
+  - {fileID: 327998316}
   - {fileID: 953847543}
   - {fileID: 1613108502}
   - {fileID: 1156158110}
