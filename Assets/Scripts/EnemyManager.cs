@@ -37,22 +37,16 @@ public class EnemyManager : MonoBehaviour
         StartCoroutine(SpawnWaves());
     }
 
-private void Update()
-    {
+private void Update()    {
         GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-
         if  
-        (
-            enemies.Length == 0
-        )
-        {
+        (enemies.Length == 0){
             basicEnemyCount += Mathf.RoundToInt(basicEnemyCount * spawnDelay);
             SpawnWaves();
         }
     }
 
-    private IEnumerator SpawnWaves()
-    {
+    private IEnumerator SpawnWaves(){
         for (int waveNumber = 0; waveNumber < totalWaves; waveNumber++)
         {
             List<GameObject> waveSet = BuildWave(waveNumber);
@@ -70,7 +64,6 @@ private void Update()
         int currentBasicEnemyCount = basicEnemyCount + waveNumber;
         int currentFastEnemyCount = fastEnemyCount + waveNumber;
         int currentTankEnemyCount = tankEnemyCount + waveNumber;
-
         List<GameObject> waveSet = new List<GameObject>();
 
         for (int i = 0; i < currentBasicEnemyCount; i++) {
@@ -86,6 +79,20 @@ private void Update()
         }
 
         return waveSet;
+    }
+
+    private List<GameObject> Shuffle(List<GameObject> waveSet)
+    {
+       List<GameObject> temp = new List<GameObject>();
+       List<GameObject> result = new List<GameObject>();
+       temp.AddRange(waveSet);
+       for (int i =0; i < waveSet.Count; i++)
+       {
+           int index = Random.Range(0, temp.Count);
+           result.Add(temp[index]);
+           temp.RemoveAt(index);
+       }
+       return result;
     }
 
     private IEnumerator SpawnWave(List<GameObject> waveSet)
