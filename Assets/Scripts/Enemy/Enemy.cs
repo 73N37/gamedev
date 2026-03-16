@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
+    [SerializeField] private int health = 1;
     [SerializeField] private float movespeed = 2f;
 
     private Rigidbody2D rb;
@@ -39,5 +40,20 @@ public class Enemy : MonoBehaviour
         Vector2 direction = (checkpoint.transform.position - transform.position).normalized;
         transform.right = checkpoint.transform.position - transform.position;
         rb.linearVelocity = direction * movespeed;
+    }
+
+    public void TakeDamage(int damage)
+    {
+        health -= damage;
+
+        if (health <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        Destroy(gameObject);
     }
 }

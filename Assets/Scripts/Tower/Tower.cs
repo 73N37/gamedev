@@ -18,7 +18,17 @@ public class Tower : MonoBehaviour
     {
         if(target)
         {
-            transform.right = target.transform.position - transform.position;
+            if(fireCooldown >= fireRate)
+            {
+                transform.right = target.transform.position - transform.position;
+                
+                target.GetComponent<Enemy>().TakeDamage(damage);
+                fireCooldown = 0f;
+            }
+            else
+            {
+                fireCooldown += 1 * Time.deltaTime;
+            }
         }   
     }
 }
