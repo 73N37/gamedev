@@ -135,7 +135,8 @@ public class GameManager : MonoBehaviour
     public void EnemyDefeated(int reward)
     {
         AddCurrency(reward);
-    }
+    } 
+    
 
     // Called when an enemy reaches the end of the path
     public void EnemyEscaped(Enemy enemy, int lifePenalty)
