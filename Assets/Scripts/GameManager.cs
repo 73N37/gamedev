@@ -6,7 +6,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager main { get; private set; }
 
-    [Header("Starting Resources")]
+    [Header("Game Settings")]
     [SerializeField] private int startingLives = 20;
     [SerializeField] private int startingCurrency = 500;
     [SerializeField] private EnemyManager enemyManager;
