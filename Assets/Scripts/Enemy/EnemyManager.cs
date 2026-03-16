@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -26,6 +27,16 @@ public class EnemyManager : MonoBehaviour
     [SerializeField] private float timeBetweenWaves = 2f;
     private int currentWave = 0;
     private bool isSpawning;
+    private readonly HashSet<Enemy> activeEnemies = new HashSet<Enemy>();
+    private bool allWavesCompletedRaised;
+
+    public event Action<int, int> WaveStarted;
+    public event Action AllWavesCompleted;
+
+    public int CurrentWave => currentWave;
+    public int TotalWaves => totalWaves;
+    public int ActiveEnemyCount => activeEnemies.Count;
+    public bool IsSpawning => isSpawning;
 
     void Awake()
     {
@@ -39,15 +50,20 @@ public class EnemyManager : MonoBehaviour
 
     private void Update()
     {
-        if (isSpawning || currentWave >= totalWaves)
+        if (isSpawning)
         {
             return;
         }
 
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        if (enemies.Length == 0)
+        if (currentWave < totalWaves && activeEnemies.Count == 0)
         {
             StartNextWave();
+        }
+
+        if (currentWave >= totalWaves && activeEnemies.Count == 0 && !allWavesCompletedRaised)
+        {
+            allWavesCompletedRaised = true;
+            AllWavesCompleted?.Invoke();
         }
     }
 
@@ -58,8 +74,9 @@ public class EnemyManager : MonoBehaviour
             return;
         }
 
-        StartCoroutine(SpawnWaveRoutine(currentWave));
         currentWave++;
+        WaveStarted?.Invoke(currentWave, totalWaves);
+        StartCoroutine(SpawnWaveRoutine(currentWave - 1));
     }
 
     private IEnumerator SpawnWaveRoutine(int waveNumber)
@@ -106,7 +123,7 @@ public class EnemyManager : MonoBehaviour
        temp.AddRange(waveSet);
        for (int i =0; i < waveSet.Count; i++)
        {
-           int index = Random.Range(0, temp.Count);
+           int index = UnityEngine.Random.Range(0, temp.Count);
            result.Add(temp[index]);
            temp.RemoveAt(index);
        }
@@ -131,5 +148,25 @@ public class EnemyManager : MonoBehaviour
             Instantiate(waveSet[i], spawnPoint.position, Quaternion.identity);
             yield return new WaitForSeconds(spawnDelay);
         }
+    }
+
+    public void RegisterEnemy(Enemy enemy)
+    {
+        if (enemy == null)
+        {
+            return;
+        }
+
+        activeEnemies.Add(enemy);
+    }
+
+    public void UnregisterEnemy(Enemy enemy)
+    {
+        if (enemy == null)
+        {
+            return;
+        }
+
+        activeEnemies.Remove(enemy);
     }
 }
