@@ -60,17 +60,17 @@ public class TowerRange : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.CompareTag("Enemy"))
+        if(collision.GameObject().CompareTag("Enemy"))
         {
-            targets.Add(collision.gameObject);
+            targetsInRange.Add(collision.GameObject());
         }
     }
 
     private void OnTriggerExit2D(Collider2D collision)
     {
-        if (collision.CompareTag("Enemy"))
+        if (collision.GameObject().CompareTag("Enemy"))
         {
-            targets.Remove(collision.gameObject);
+            targetsInRange.Remove(collision.GameObject());
         }
     }
 
