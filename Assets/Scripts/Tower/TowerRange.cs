@@ -1,27 +1,60 @@
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
+[ExecuteAlways]
 public class TowerRange : MonoBehaviour
 {
+    [SerializeField] private Tower tower;
+    private List<GameObject> targets = new List<GameObject>();
 
-    [SerializeField] private Tower Tower;
-
-    private List<GameObject> targetsInRange = new List<GameObject>();
     void Start()
     {
+        if (tower == null)
+        {
+            tower = GetComponentInParent<Tower>();
+        }
+
+        UpdateRange();
+    }
+
+    private void OnEnable()
+    {
+        if (tower == null)
+        {
+            tower = GetComponentInParent<Tower>();
+        }
+
+        UpdateRange();
+    }
+
+    private void OnValidate()
+    {
+        if (tower == null)
+        {
+            tower = GetComponentInParent<Tower>();
+        }
+
         UpdateRange();
     }
 
     void Update()
     {
-        if (targetsInRange.Count > 0)
+        KeepRangeCentered();
+
+        if (tower == null)
         {
-            Tower.target = targetsInRange[0];
+            return;
+        }
+
+        targets.RemoveAll(target => target == null);
+
+        if (targets.Count > 0)
+        {
+            tower.target = GetNearestTarget();
         }
         else
         {
-            Tower.target = null;
+            tower.target = null;
         }
     }
 
@@ -43,6 +76,46 @@ public class TowerRange : MonoBehaviour
 
     public void UpdateRange()
     {
-        transform.localScale = new Vector3(Tower.range, Tower.range, Tower.range);
+        if (tower == null)
+        {
+            return;
+        }
+
+        KeepRangeCentered();
+        transform.localScale = new Vector3(tower.Range, tower.Range, tower.Range);
+    }
+
+    private void LateUpdate()
+    {
+        KeepRangeCentered();
+    }
+
+    private void KeepRangeCentered()
+    {
+        if (tower == null)
+        {
+            return;
+        }
+
+        transform.position = tower.transform.position;
+        transform.rotation = Quaternion.identity;
+    }
+
+    private GameObject GetNearestTarget()
+    {
+        GameObject nearestTarget = targets[0];
+        float nearestDistance = Vector2.Distance(tower.transform.position, nearestTarget.transform.position);
+
+        for (int i = 1; i < targets.Count; i++)
+        {
+            float distance = Vector2.Distance(tower.transform.position, targets[i].transform.position);
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestTarget = targets[i];
+            }
+        }
+
+        return nearestTarget;
     }
 }
