@@ -246,6 +246,9 @@ MonoBehaviour:
   totalWaves: 20
   spawnDelay: 2
   timeBetweenWaves: 2
+  basicEnemyGrowthPerWave: 2
+  fastEnemyGrowthPerWave: 2
+  tankEnemyGrowthPerWave: 2
 --- !u!4 &327998316
 Transform:
   m_ObjectHideFlags: 0
@@ -641,10 +644,6 @@ MonoBehaviour:
   startingLives: 100
   startingCurrency: 10
   enemyManager: {fileID: 327998315}
-  hudCanvas: {fileID: 0}
-  livesText: {fileID: 0}
-  currencyText: {fileID: 0}
-  waveText: {fileID: 0}
 --- !u!4 &1931134840
 Transform:
   m_ObjectHideFlags: 0
