@@ -243,7 +243,7 @@ MonoBehaviour:
   tankEnemyCount: 1
   tankEnemyHealth: 7
   tankEnemyCoinReward: 3
-  totalWaves: 2
+  totalWaves: 20
   spawnDelay: 2
   timeBetweenWaves: 2
 --- !u!4 &327998316

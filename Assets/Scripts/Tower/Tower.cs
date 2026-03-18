@@ -13,26 +13,34 @@ public class Tower : MonoBehaviour
     [Header("Upgrade Settings")]
     [SerializeField] private int[] rangeUpgradeCosts = { 10, 20, 30 };
     [SerializeField] private float[] rangeUpgradeAmounts = { 1f, 1.5f, 2f };
+    [SerializeField] private int[] damageUpgradeCosts = { 15, 30, 45 };
+    [SerializeField] private int[] damageUpgradeAmounts = { 1, 2, 3 };
     [SerializeField] private int[] fireRateUpgradeCosts = { 10, 20, 30 };
     [SerializeField] private float[] fireRateUpgradeReductions = { 0.1f, 0.15f, 0.2f };
     [SerializeField] private float minimumFireRate = 0.1f;
 
     private float fireCooldown = 0f;
     private int rangeUpgradeTier = 0;
+    private int damageUpgradeTier = 0;
     private int fireRateUpgradeTier = 0;
     private TowerRange towerRange;
 
     [HideInInspector] public GameObject target;
 
     public float Range => range;
+    public int CurrentDamage => damage;
     public float CurrentFireRate => fireRate;
     public int RangeUpgradeTier => rangeUpgradeTier;
+    public int DamageUpgradeTier => damageUpgradeTier;
     public int FireRateUpgradeTier => fireRateUpgradeTier;
     public int MaxRangeUpgradeTier => Mathf.Min(rangeUpgradeCosts.Length, rangeUpgradeAmounts.Length);
+    public int MaxDamageUpgradeTier => Mathf.Min(damageUpgradeCosts.Length, damageUpgradeAmounts.Length);
     public int MaxFireRateUpgradeTier => Mathf.Min(fireRateUpgradeCosts.Length, fireRateUpgradeReductions.Length);
     public bool CanUpgradeRange => rangeUpgradeTier < MaxRangeUpgradeTier;
+    public bool CanUpgradeDamage => damageUpgradeTier < MaxDamageUpgradeTier;
     public bool CanUpgradeFireRate => fireRateUpgradeTier < MaxFireRateUpgradeTier;
     public int NextRangeUpgradeCost => CanUpgradeRange ? rangeUpgradeCosts[rangeUpgradeTier] : -1;
+    public int NextDamageUpgradeCost => CanUpgradeDamage ? damageUpgradeCosts[damageUpgradeTier] : -1;
     public int NextFireRateUpgradeCost => CanUpgradeFireRate ? fireRateUpgradeCosts[fireRateUpgradeTier] : -1;
 
     // Runs when the tower is created to ensure it can shoot, resize, and be clicked.
@@ -112,6 +120,25 @@ public class Tower : MonoBehaviour
         range += rangeUpgradeAmounts[rangeUpgradeTier];
         rangeUpgradeTier++;
         towerRange?.UpdateRange();
+        GameManager.main.RefreshTowerShop();
+        return true;
+    }
+
+    // Called by the shop UI when the player buys the next damage upgrade for this tower.
+    public bool TryUpgradeDamage()
+    {
+        if (!CanUpgradeDamage || GameManager.main == null)
+        {
+            return false;
+        }
+
+        if (!GameManager.main.TrySpendCurrency(NextDamageUpgradeCost))
+        {
+            return false;
+        }
+
+        damage += damageUpgradeAmounts[damageUpgradeTier];
+        damageUpgradeTier++;
         GameManager.main.RefreshTowerShop();
         return true;
     }

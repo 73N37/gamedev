@@ -38,9 +38,12 @@ public class EnemyManager : MonoBehaviour
     [SerializeField] private int tankEnemyCoinReward = 3;
 
     [Header("Wave settings")]
-    [SerializeField] private int totalWaves = 3;
+    [SerializeField] private int totalWaves = 20;
     [SerializeField] private float spawnDelay = 0.5f;
     [SerializeField] private float timeBetweenWaves = 2f;
+    [SerializeField] private int basicEnemyGrowthPerWave = 1;
+    [SerializeField] private int fastEnemyGrowthPerWave = 1;
+    [SerializeField] private int tankEnemyGrowthPerWave = 1;
     private int currentWave = 0;
     private bool isSpawning;
     private readonly HashSet<Enemy> activeEnemies = new HashSet<Enemy>();
@@ -118,42 +121,36 @@ public class EnemyManager : MonoBehaviour
     // Called at the start of a wave to build the list of enemies and stats for that wave.
     private List<EnemySpawnInfo> BuildWave(int waveNumber)
     {
-        int currentBasicEnemyCount = basicEnemyCount + waveNumber;
-        int currentFastEnemyCount = fastEnemyCount + waveNumber;
-        int currentTankEnemyCount = tankEnemyCount + waveNumber;
         List<EnemySpawnInfo> waveSet = new List<EnemySpawnInfo>();
 
-        for (int i = 0; i < currentBasicEnemyCount; i++)
-        {
-            waveSet.Add(new EnemySpawnInfo
-            {
-                prefab = basicEnemy,
-                health = basicEnemyHealth,
-                coinReward = basicEnemyCoinReward
-            });
-        }
-
-        for (int i = 0; i < currentFastEnemyCount; i++)
-        {
-            waveSet.Add(new EnemySpawnInfo
-            {
-                prefab = fastEnemy,
-                health = fastEnemyHealth,
-                coinReward = fastEnemyCoinReward
-            });
-        }
-
-        for (int i = 0; i < currentTankEnemyCount; i++)
-        {
-            waveSet.Add(new EnemySpawnInfo
-            {
-                prefab = tankEnemy,
-                health = tankEnemyHealth,
-                coinReward = tankEnemyCoinReward
-            });
-        }
+        AddEnemiesForWave(waveSet, basicEnemy, basicEnemyCount, basicEnemyGrowthPerWave, basicEnemyHealth, basicEnemyCoinReward, waveNumber);
+        AddEnemiesForWave(waveSet, fastEnemy, fastEnemyCount, fastEnemyGrowthPerWave, fastEnemyHealth, fastEnemyCoinReward, waveNumber);
+        AddEnemiesForWave(waveSet, tankEnemy, tankEnemyCount, tankEnemyGrowthPerWave, tankEnemyHealth, tankEnemyCoinReward, waveNumber);
 
         return waveSet;
+    }
+
+    // Called by BuildWave to scale one enemy type upward each wave so later waves get harder.
+    private void AddEnemiesForWave(
+        List<EnemySpawnInfo> waveSet,
+        GameObject prefab,
+        int baseCount,
+        int growthPerWave,
+        int health,
+        int coinReward,
+        int waveNumber)
+    {
+        int enemyCount = Mathf.Max(0, baseCount + (waveNumber * growthPerWave));
+
+        for (int i = 0; i < enemyCount; i++)
+        {
+            waveSet.Add(new EnemySpawnInfo
+            {
+                prefab = prefab,
+                health = health,
+                coinReward = coinReward
+            });
+        }
     }
 
     // Called before spawning to randomize the order of enemies in the wave.

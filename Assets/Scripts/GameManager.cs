@@ -24,11 +24,14 @@ public class GameManager : MonoBehaviour
     private GameObject shopPanel;
     private Text shopTitleText;
     private Text shopRangeText;
+    private Text shopDamageText;
     private Text shopFireRateText;
     private Button rangeUpgradeButton;
+    private Button damageUpgradeButton;
     private Button fireRateUpgradeButton;
     private Button closeShopButton;
     private Text rangeUpgradeButtonText;
+    private Text damageUpgradeButtonText;
     private Text fireRateUpgradeButtonText;
     private Tower selectedTower;
 
@@ -250,13 +253,14 @@ public class GameManager : MonoBehaviour
 
         shopTitleText.text = $"{selectedTower.name} Shop";
         shopRangeText.text = $"Range Tier: {selectedTower.RangeUpgradeTier}/{selectedTower.MaxRangeUpgradeTier}\nCurrent Range: {selectedTower.Range:F1}";
+        shopDamageText.text = $"Damage Tier: {selectedTower.DamageUpgradeTier}/{selectedTower.MaxDamageUpgradeTier}\nCurrent Damage: {selectedTower.CurrentDamage}";
         shopFireRateText.text = $"Fire Rate Tier: {selectedTower.FireRateUpgradeTier}/{selectedTower.MaxFireRateUpgradeTier}\nCurrent Delay: {selectedTower.CurrentFireRate:F2}s";
 
         if (selectedTower.CanUpgradeRange)
         {
-            shopRangeText.text += $"\nNext Cost: {selectedTower.NextRangeUpgradeCost}";
+            shopRangeText.text += $"\nNext Upgrade Cost: {selectedTower.NextRangeUpgradeCost} coins";
             rangeUpgradeButton.interactable = Currency >= selectedTower.NextRangeUpgradeCost;
-            rangeUpgradeButtonText.text = $"Upgrade Range ({selectedTower.NextRangeUpgradeCost})";
+            rangeUpgradeButtonText.text = "Upgrade Range";
         }
         else
         {
@@ -265,11 +269,24 @@ public class GameManager : MonoBehaviour
             rangeUpgradeButtonText.text = "Range Maxed";
         }
 
+        if (selectedTower.CanUpgradeDamage)
+        {
+            shopDamageText.text += $"\nNext Upgrade Cost: {selectedTower.NextDamageUpgradeCost} coins";
+            damageUpgradeButton.interactable = Currency >= selectedTower.NextDamageUpgradeCost;
+            damageUpgradeButtonText.text = "Upgrade Damage";
+        }
+        else
+        {
+            shopDamageText.text += "\nMax Tier Reached";
+            damageUpgradeButton.interactable = false;
+            damageUpgradeButtonText.text = "Damage Maxed";
+        }
+
         if (selectedTower.CanUpgradeFireRate)
         {
-            shopFireRateText.text += $"\nNext Cost: {selectedTower.NextFireRateUpgradeCost}";
+            shopFireRateText.text += $"\nNext Upgrade Cost: {selectedTower.NextFireRateUpgradeCost} coins";
             fireRateUpgradeButton.interactable = Currency >= selectedTower.NextFireRateUpgradeCost;
-            fireRateUpgradeButtonText.text = $"Upgrade Fire Rate ({selectedTower.NextFireRateUpgradeCost})";
+            fireRateUpgradeButtonText.text = "Upgrade Fire Rate";
         }
         else
         {
@@ -358,6 +375,8 @@ public class GameManager : MonoBehaviour
         text.fontSize = 24;
         text.color = Color.white;
         text.alignment = TextAnchor.MiddleLeft;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Overflow;
         text.raycastTarget = false;
 
         RectTransform rect = text.GetComponent<RectTransform>();
@@ -415,7 +434,7 @@ public class GameManager : MonoBehaviour
         panelRect.anchorMax = new Vector2(1f, 1f);
         panelRect.pivot = new Vector2(1f, 1f);
         panelRect.anchoredPosition = new Vector2(-16f, -16f);
-        panelRect.sizeDelta = new Vector2(320f, 220f);
+        panelRect.sizeDelta = new Vector2(320f, 340f);
 
         shopTitleText = CreateHudText("Shop Title", panelRect, new Vector2(16f, -14f));
         shopTitleText.fontSize = 26;
@@ -423,17 +442,25 @@ public class GameManager : MonoBehaviour
         shopRangeText = CreateHudText("Range Info", panelRect, new Vector2(16f, -54f));
         shopRangeText.fontSize = 20;
         shopRangeText.alignment = TextAnchor.UpperLeft;
-        shopRangeText.GetComponent<RectTransform>().sizeDelta = new Vector2(280f, 52f);
+        shopRangeText.GetComponent<RectTransform>().sizeDelta = new Vector2(280f, 72f);
 
-        shopFireRateText = CreateHudText("Fire Rate Info", panelRect, new Vector2(16f, -118f));
+        shopDamageText = CreateHudText("Damage Info", panelRect, new Vector2(16f, -132f));
+        shopDamageText.fontSize = 20;
+        shopDamageText.alignment = TextAnchor.UpperLeft;
+        shopDamageText.GetComponent<RectTransform>().sizeDelta = new Vector2(280f, 72f);
+
+        shopFireRateText = CreateHudText("Fire Rate Info", panelRect, new Vector2(16f, -210f));
         shopFireRateText.fontSize = 20;
         shopFireRateText.alignment = TextAnchor.UpperLeft;
-        shopFireRateText.GetComponent<RectTransform>().sizeDelta = new Vector2(280f, 52f);
+        shopFireRateText.GetComponent<RectTransform>().sizeDelta = new Vector2(280f, 72f);
 
-        rangeUpgradeButton = CreateShopButton("Range Upgrade Button", panelRect, new Vector2(16f, -180f), new Vector2(140f, 28f), out rangeUpgradeButtonText);
+        rangeUpgradeButton = CreateShopButton("Range Upgrade Button", panelRect, new Vector2(16f, -302f), new Vector2(90f, 28f), out rangeUpgradeButtonText);
         rangeUpgradeButton.onClick.AddListener(HandleRangeUpgradeClicked);
 
-        fireRateUpgradeButton = CreateShopButton("Fire Rate Upgrade Button", panelRect, new Vector2(164f, -180f), new Vector2(140f, 28f), out fireRateUpgradeButtonText);
+        damageUpgradeButton = CreateShopButton("Damage Upgrade Button", panelRect, new Vector2(114f, -302f), new Vector2(90f, 28f), out damageUpgradeButtonText);
+        damageUpgradeButton.onClick.AddListener(HandleDamageUpgradeClicked);
+
+        fireRateUpgradeButton = CreateShopButton("Fire Rate Upgrade Button", panelRect, new Vector2(212f, -302f), new Vector2(92f, 28f), out fireRateUpgradeButtonText);
         fireRateUpgradeButton.onClick.AddListener(HandleFireRateUpgradeClicked);
 
         closeShopButton = CreateShopButton("Close Shop Button", panelRect, new Vector2(214f, -14f), new Vector2(90f, 26f), out Text closeButtonText);
@@ -529,6 +556,15 @@ public class GameManager : MonoBehaviour
         if (selectedTower != null)
         {
             selectedTower.TryUpgradeRange();
+        }
+    }
+
+    // Called by the damage-upgrade button to buy the next damage tier on the selected tower.
+    private void HandleDamageUpgradeClicked()
+    {
+        if (selectedTower != null)
+        {
+            selectedTower.TryUpgradeDamage();
         }
     }
 
