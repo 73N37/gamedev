@@ -9,7 +9,7 @@ public class Enemy : MonoBehaviour
     [SerializeField] private int lifePenalty = 1;
 
     private Rigidbody2D rb;
-    private Transform checkpoint;
+    private Transform despawnpoint;
     private Transform[] checkpoints;
     private int currentHealth;
     private int index = 0;
@@ -41,19 +41,19 @@ public class Enemy : MonoBehaviour
         }
 
         EnemyManager.main.RegisterEnemy(this);
-        checkpoints = EnemyManager.main.checkpoints;
-        checkpoint = checkpoints[index];
+        checkpoints = EnemyManager.main.checkpoints; // sets the local variable 'chceckpoints' to the array of checkpoints from EnemyManager
+        despawnpoint = checkpoints[index];    // sets the last entry of the checkpoints array as the initial despawn point for the enemy to move towards 
     }
 
     // Runs every frame to detect when the enemy reaches a waypoint or the end of the path.
     void Update()
     {
-        if (checkpoint == null)
+        if (despawnpoint == null)
         {
             return;
         }
 
-        if (Vector2.Distance(checkpoint.position, transform.position) <= 0.1f)
+        if (Vector2.Distance(despawnpoint.position, transform.position) <= 0.1f)
         {
             index++;
 
@@ -63,20 +63,20 @@ public class Enemy : MonoBehaviour
                 return;
             }
 
-            checkpoint = checkpoints[index];
+            despawnpoint = checkpoints[index];
         }
     }
 
     // Runs on the physics step to move the enemy toward its current waypoint.
     void FixedUpdate()
     {
-        if (checkpoint == null)
+        if (despawnpoint == null)
         {
             return;
         }
 
-        Vector2 direction = (checkpoint.position - transform.position).normalized;
-        transform.right = checkpoint.position - transform.position;
+        Vector2 direction = (despawnpoint.position - transform.position).normalized;
+        transform.right = despawnpoint.position - transform.position;
         rb.linearVelocity = direction * movespeed;
     }
 
