@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+// Central game-state controller that also builds a simple fallback HUD at runtime.
 public class GameManager : MonoBehaviour
 {
     public static GameManager main { get; private set; }
@@ -31,6 +32,7 @@ public class GameManager : MonoBehaviour
     public bool IsGameWon { get; private set; }
     public bool IsPaused => Time.timeScale <= 0f;
 
+    // Runs after a scene loads to guarantee there is always one active GameManager.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void EnsureGameManagerExists()
     {
@@ -41,6 +43,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Runs when this object is created and sets up the singleton reference.
     private void Awake()
     {
         if (main != null && main != this)
@@ -52,6 +55,7 @@ public class GameManager : MonoBehaviour
         main = this;
     }
 
+    // Runs once after Awake to find dependencies, create the HUD, and push the starting values.
     private void Start()
     {
         if (enemyManager == null)
@@ -80,6 +84,7 @@ public class GameManager : MonoBehaviour
         UpdateWaveHud(CurrentWave, TotalWaves);
     }
 
+    // Runs when the manager is destroyed so subscriptions and singleton state are cleaned up.
     private void OnDestroy()
     {
         if (main == this)
@@ -94,6 +99,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Called by future build/shop logic when the player tries to spend coins.
     public bool TrySpendCurrency(int amount)
     {
         if (amount < 0)
@@ -112,6 +118,7 @@ public class GameManager : MonoBehaviour
         return true;
     }
 
+    // Called whenever the game awards coins so the stored value and HUD stay in sync.
     public void AddCurrency(int amount)
     {
         if (amount <= 0 || IsGameOver)
@@ -124,11 +131,13 @@ public class GameManager : MonoBehaviour
         UpdateCurrencyHud();
     }
 
+    // Called by an Enemy when it is popped so the player receives that balloon's reward.
     public void EnemyDefeated(int reward)
     {
         AddCurrency(reward);
     }
 
+    // Called by an Enemy when it reaches the final waypoint instead of being popped.
     public void EnemyEscaped(Enemy enemy, int lifePenalty)
     {
         if (IsGameOver)
@@ -139,6 +148,7 @@ public class GameManager : MonoBehaviour
         DamageBase(lifePenalty);
     }
 
+    // Called whenever the player should lose health, usually after a balloon escapes.
     public void DamageBase(int amount)
     {
         if (amount <= 0 || IsGameOver)
@@ -156,6 +166,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Called by pause UI or input to freeze and unfreeze gameplay time.
     public void TogglePause()
     {
         if (IsGameOver)
@@ -166,18 +177,21 @@ public class GameManager : MonoBehaviour
         Time.timeScale = IsPaused ? 1f : 0f;
     }
 
+    // Called by UI or end-game flow to reload the current scene from the beginning.
     public void RestartLevel()
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
+    // Runs when EnemyManager announces a new wave so events and HUD text stay current.
     private void HandleWaveStarted(int waveNumber, int totalWaves)
     {
         WaveChanged?.Invoke(waveNumber, totalWaves);
         UpdateWaveHud(waveNumber, totalWaves);
     }
 
+    // Runs when the final wave is cleared and no living enemies remain.
     private void HandleAllWavesCompleted()
     {
         if (!IsGameOver)
@@ -186,6 +200,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Called internally when the player wins or loses to lock in the final game state.
     private void EndGame(bool playerWon)
     {
         IsGameOver = true;
@@ -194,6 +209,7 @@ public class GameManager : MonoBehaviour
         GameStateChanged?.Invoke(IsGameOver, IsGameWon);
     }
 
+    // Runs during startup to create a simple HUD automatically if the scene has none assigned.
     private void EnsureHudExists()
     {
         if (livesText != null && currencyText != null && waveText != null)
@@ -229,6 +245,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Called only while building the fallback HUD to create one text label.
     private Text CreateHudText(string objectName, Transform parent, Font font, Vector2 anchoredPosition)
     {
         GameObject textObject = new GameObject(objectName);
@@ -250,6 +267,7 @@ public class GameManager : MonoBehaviour
         return text;
     }
 
+    // Called while building the fallback HUD to reuse or create the top-left panel container.
     private RectTransform EnsureHudPanel()
     {
         Transform existingPanel = hudCanvas.transform.Find("HUD Panel");
@@ -274,6 +292,7 @@ public class GameManager : MonoBehaviour
         return panelRect;
     }
 
+    // Called whenever health changes so the HUD reflects the current player health.
     private void UpdateLivesHud()
     {
         if (livesText != null)
@@ -282,6 +301,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Called whenever coins change so the HUD shows the latest value.
     private void UpdateCurrencyHud()
     {
         if (currencyText != null)
@@ -290,6 +310,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Called whenever the active wave changes so the HUD shows current wave progress.
     private void UpdateWaveHud(int waveNumber, int totalWaves)
     {
         if (waveText != null)

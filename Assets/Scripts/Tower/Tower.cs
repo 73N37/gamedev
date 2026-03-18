@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// Rotates toward the current target and fires projectiles on a cooldown.
 public class Tower : MonoBehaviour
 {
     [SerializeField] private float range = 8f;
@@ -14,6 +15,7 @@ public class Tower : MonoBehaviour
 
     public float Range => range;
 
+    // Runs when the tower is created to ensure it has a valid place to spawn projectiles from.
     private void Awake()
     {
         if (shootPoint == null)
@@ -22,6 +24,7 @@ public class Tower : MonoBehaviour
         }
     }
 
+    // Runs every frame to face the target, count cooldown time, and shoot when ready.
     void Update()
     {
         if (target == null)
@@ -50,6 +53,7 @@ public class Tower : MonoBehaviour
         fireCooldown = 0f;
     }
 
+    // Called when the tower is ready to attack and has a valid enemy target.
     private void Fire(Enemy enemy)
     {
         if (enemy == null)

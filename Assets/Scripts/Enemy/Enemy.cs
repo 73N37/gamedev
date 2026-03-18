@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// One balloon instance that follows the waypoint path until it is popped or escapes.
 public class Enemy : MonoBehaviour
 {
     [SerializeField] private float movespeed = 2f;
@@ -14,12 +15,14 @@ public class Enemy : MonoBehaviour
     private int index = 0;
     private bool hasBeenRemoved;
 
+    // Runs when the enemy is created to cache physics and apply its initial serialized health.
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         currentHealth = Mathf.Max(1, maxHealth);
     }
 
+    // Called by EnemyManager right after spawn to apply per-enemy-type health and coin rewards.
     public void Initialize(int health, int coinReward)
     {
         maxHealth = Mathf.Max(1, health);
@@ -27,6 +30,7 @@ public class Enemy : MonoBehaviour
         reward = Mathf.Max(0, coinReward);
     }
 
+    // Runs once after spawn so the enemy can register itself and grab the shared waypoint path.
     void Start()
     {
         if (EnemyManager.main == null || EnemyManager.main.checkpoints == null || EnemyManager.main.checkpoints.Length == 0)
@@ -41,6 +45,7 @@ public class Enemy : MonoBehaviour
         checkpoint = checkpoints[index];
     }
 
+    // Runs every frame to detect when the enemy reaches a waypoint or the end of the path.
     void Update()
     {
         if (checkpoint == null)
@@ -62,6 +67,7 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    // Runs on the physics step to move the enemy toward its current waypoint.
     void FixedUpdate()
     {
         if (checkpoint == null)
@@ -74,6 +80,7 @@ public class Enemy : MonoBehaviour
         rb.linearVelocity = direction * movespeed;
     }
 
+    // Called by projectiles or other damage sources when this enemy is hit.
     public void TakeDamage(int damage)
     {
         if (damage <= 0 || hasBeenRemoved)
@@ -89,6 +96,7 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    // Called when the enemy reaches the final waypoint so it damages the player and despawns.
     private void ReachGoal()
     {
         if (hasBeenRemoved)
@@ -101,6 +109,7 @@ public class Enemy : MonoBehaviour
         Destroy(gameObject);
     }
 
+    // Called when the enemy's health reaches zero so the player gets coins and the enemy is removed.
     private void Die()
     {
         if (hasBeenRemoved)
@@ -113,6 +122,7 @@ public class Enemy : MonoBehaviour
         Destroy(gameObject);
     }
 
+    // Runs whenever the enemy is destroyed so EnemyManager stops tracking this instance.
     private void OnDestroy()
     {
         EnemyManager.main?.UnregisterEnemy(this);

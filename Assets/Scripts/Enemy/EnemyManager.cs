@@ -3,8 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Builds wave contents, spawns enemies over time, and tracks when each wave is cleared.
 public class EnemyManager : MonoBehaviour
 {
+    // Temporary per-spawn data used while a wave is being built and instantiated.
     [Serializable]
     private struct EnemySpawnInfo
     {
@@ -52,16 +54,19 @@ public class EnemyManager : MonoBehaviour
     public int ActiveEnemyCount => activeEnemies.Count;
     public bool IsSpawning => isSpawning;
 
+    // Runs when the scene creates this manager and stores the singleton used by enemies.
     void Awake()
     {
         main = this;
     }
 
+    // Runs once at scene start to begin the first wave automatically.
     void Start()
     {
         StartNextWave();
     }
 
+    // Runs every frame to decide when to start the next wave and when all waves are complete.
     private void Update()
     {
         if (isSpawning)
@@ -81,6 +86,7 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    // Called internally when the next wave should begin.
     private void StartNextWave()
     {
         if (currentWave >= totalWaves)
@@ -93,6 +99,7 @@ public class EnemyManager : MonoBehaviour
         StartCoroutine(SpawnWaveRoutine(currentWave - 1));
     }
 
+    // Coroutine started for each wave so delays and spawns can happen over time.
     private IEnumerator SpawnWaveRoutine(int waveNumber)
     {
         isSpawning = true;
@@ -108,6 +115,7 @@ public class EnemyManager : MonoBehaviour
         isSpawning = false;
     }
 
+    // Called at the start of a wave to build the list of enemies and stats for that wave.
     private List<EnemySpawnInfo> BuildWave(int waveNumber)
     {
         int currentBasicEnemyCount = basicEnemyCount + waveNumber;
@@ -148,6 +156,7 @@ public class EnemyManager : MonoBehaviour
         return waveSet;
     }
 
+    // Called before spawning to randomize the order of enemies in the wave.
     private List<EnemySpawnInfo> Shuffle(List<EnemySpawnInfo> waveSet)
     {
        List<EnemySpawnInfo> temp = new List<EnemySpawnInfo>();
@@ -162,6 +171,7 @@ public class EnemyManager : MonoBehaviour
        return result;
     }
 
+    // Coroutine that instantiates enemies one by one and applies their per-type stats.
     private IEnumerator SpawnWave(List<EnemySpawnInfo> waveSet)
     {
         if (spawnPoint == null || checkpoints == null || checkpoints.Length == 0)
@@ -188,6 +198,7 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    // Called by each Enemy in Start so the manager can count living enemies in the current wave.
     public void RegisterEnemy(Enemy enemy)
     {
         if (enemy == null)
@@ -198,6 +209,7 @@ public class EnemyManager : MonoBehaviour
         activeEnemies.Add(enemy);
     }
 
+    // Called by each Enemy in OnDestroy so the manager knows when a wave has been cleared.
     public void UnregisterEnemy(Enemy enemy)
     {
         if (enemy == null)
