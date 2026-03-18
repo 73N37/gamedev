@@ -122,7 +122,45 @@ public class Enemy : MonoBehaviour
         Destroy(gameObject);
     }
 
-    // Runs whenever the enemy is destroyed so EnemyManager stops tracking this instance.
+    public void TakeDamage(int damage)
+    {
+        if (damage <= 0 || hasBeenRemoved)
+        {
+            return;
+        }
+
+        currentHealth -= damage;
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void ReachGoal()
+    {
+        if (hasBeenRemoved)
+        {
+            return;
+        }
+
+        hasBeenRemoved = true;
+        GameManager.main?.EnemyEscaped(this, lifePenalty);
+        Destroy(gameObject);
+    }
+
+    private void Die()
+    {
+        if (hasBeenRemoved)
+        {
+            return;
+        }
+
+        hasBeenRemoved = true;
+        GameManager.main?.EnemyDefeated(reward);
+        Destroy(gameObject);
+    }
+
     private void OnDestroy()
     {
         EnemyManager.main?.UnregisterEnemy(this);
