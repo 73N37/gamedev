@@ -1,9 +1,12 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// Central game-state controller that also builds a simple fallback HUD at runtime.
+// Central game-state controller that also builds the HUD and tower shop at runtime.
 public class GameManager : MonoBehaviour
 {
     public static GameManager main { get; private set; }
@@ -13,11 +16,21 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int startingCurrency = 0;
     [SerializeField] private EnemyManager enemyManager;
 
-    [Header("HUD")]
     private Canvas hudCanvas;
+    private Font hudFont;
     private Text livesText;
-     private Text currencyText;
-     private Text waveText;
+    private Text currencyText;
+    private Text waveText;
+    private GameObject shopPanel;
+    private Text shopTitleText;
+    private Text shopRangeText;
+    private Text shopFireRateText;
+    private Button rangeUpgradeButton;
+    private Button fireRateUpgradeButton;
+    private Button closeShopButton;
+    private Text rangeUpgradeButtonText;
+    private Text fireRateUpgradeButtonText;
+    private Tower selectedTower;
 
     public event Action<int, int> LivesChanged;
     public event Action<int> CurrencyChanged;
@@ -53,6 +66,12 @@ public class GameManager : MonoBehaviour
         }
 
         main = this;
+    }
+
+    // Runs every frame to handle tower selection clicks for the shop.
+    private void Update()
+    {
+        HandleTowerSelectionInput();
     }
 
     // Runs once after Awake to find dependencies, create the HUD, and push the starting values.
@@ -99,7 +118,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Called by future build/shop logic when the player tries to spend coins.
+    // Called by tower upgrades when the player tries to spend coins.
     public bool TrySpendCurrency(int amount)
     {
         if (amount < 0)
@@ -115,6 +134,8 @@ public class GameManager : MonoBehaviour
 
         Currency -= amount;
         CurrencyChanged?.Invoke(Currency);
+        UpdateCurrencyHud();
+        RefreshTowerShop();
         return true;
     }
 
@@ -129,6 +150,7 @@ public class GameManager : MonoBehaviour
         Currency += amount;
         CurrencyChanged?.Invoke(Currency);
         UpdateCurrencyHud();
+        RefreshTowerShop();
     }
 
     // Called by an Enemy when it is popped so the player receives that balloon's reward.
@@ -184,6 +206,79 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
+    // Called by a Tower when the player clicks it and wants to open that tower's shop panel.
+    public void OpenTowerShop(Tower tower)
+    {
+        if (tower == null)
+        {
+            return;
+        }
+
+        EnsureHudExists();
+        EnsureShopExists();
+
+        selectedTower = tower;
+        shopPanel.SetActive(true);
+        shopPanel.transform.SetAsLastSibling();
+        RefreshTowerShop();
+    }
+
+    // Called when the player clicks away from towers or presses the close button on the shop panel.
+    public void CloseTowerShop()
+    {
+        selectedTower = null;
+
+        if (shopPanel != null)
+        {
+            shopPanel.SetActive(false);
+        }
+    }
+
+    // Called whenever currency or tower upgrade data changes so the shop stays current.
+    public void RefreshTowerShop()
+    {
+        if (shopPanel == null)
+        {
+            return;
+        }
+
+        if (selectedTower == null)
+        {
+            CloseTowerShop();
+            return;
+        }
+
+        shopTitleText.text = $"{selectedTower.name} Shop";
+        shopRangeText.text = $"Range Tier: {selectedTower.RangeUpgradeTier}/{selectedTower.MaxRangeUpgradeTier}\nCurrent Range: {selectedTower.Range:F1}";
+        shopFireRateText.text = $"Fire Rate Tier: {selectedTower.FireRateUpgradeTier}/{selectedTower.MaxFireRateUpgradeTier}\nCurrent Delay: {selectedTower.CurrentFireRate:F2}s";
+
+        if (selectedTower.CanUpgradeRange)
+        {
+            shopRangeText.text += $"\nNext Cost: {selectedTower.NextRangeUpgradeCost}";
+            rangeUpgradeButton.interactable = Currency >= selectedTower.NextRangeUpgradeCost;
+            rangeUpgradeButtonText.text = $"Upgrade Range ({selectedTower.NextRangeUpgradeCost})";
+        }
+        else
+        {
+            shopRangeText.text += "\nMax Tier Reached";
+            rangeUpgradeButton.interactable = false;
+            rangeUpgradeButtonText.text = "Range Maxed";
+        }
+
+        if (selectedTower.CanUpgradeFireRate)
+        {
+            shopFireRateText.text += $"\nNext Cost: {selectedTower.NextFireRateUpgradeCost}";
+            fireRateUpgradeButton.interactable = Currency >= selectedTower.NextFireRateUpgradeCost;
+            fireRateUpgradeButtonText.text = $"Upgrade Fire Rate ({selectedTower.NextFireRateUpgradeCost})";
+        }
+        else
+        {
+            shopFireRateText.text += "\nMax Tier Reached";
+            fireRateUpgradeButton.interactable = false;
+            fireRateUpgradeButtonText.text = "Fire Rate Maxed";
+        }
+    }
+
     // Runs when EnemyManager announces a new wave so events and HUD text stay current.
     private void HandleWaveStarted(int waveNumber, int totalWaves)
     {
@@ -206,10 +301,11 @@ public class GameManager : MonoBehaviour
         IsGameOver = true;
         IsGameWon = playerWon;
         Time.timeScale = 1f;
+        CloseTowerShop();
         GameStateChanged?.Invoke(IsGameOver, IsGameWon);
     }
 
-    // Runs during startup to create a simple HUD automatically if the scene has none assigned.
+    // Runs during startup to create the HUD automatically if the scene has none assigned.
     private void EnsureHudExists()
     {
         if (livesText != null && currencyText != null && waveText != null)
@@ -226,36 +322,43 @@ public class GameManager : MonoBehaviour
             canvasObject.AddComponent<GraphicRaycaster>();
         }
 
-        Font hudFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        if (hudFont == null)
+        {
+            hudFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        }
+
         RectTransform hudParent = EnsureHudPanel();
 
         if (livesText == null)
         {
-            livesText = CreateHudText("Lives Text", hudParent, hudFont, new Vector2(16f, -14f));
+            livesText = CreateHudText("Lives Text", hudParent, new Vector2(16f, -14f));
         }
 
         if (currencyText == null)
         {
-            currencyText = CreateHudText("Coins Text", hudParent, hudFont, new Vector2(16f, -44f));
+            currencyText = CreateHudText("Coins Text", hudParent, new Vector2(16f, -44f));
         }
 
         if (waveText == null)
         {
-            waveText = CreateHudText("Wave Text", hudParent, hudFont, new Vector2(16f, -74f));
+            waveText = CreateHudText("Wave Text", hudParent, new Vector2(16f, -74f));
         }
+
+        EnsureUiEventSystem();
     }
 
-    // Called only while building the fallback HUD to create one text label.
-    private Text CreateHudText(string objectName, Transform parent, Font font, Vector2 anchoredPosition)
+    // Called only while building runtime UI to create one text label with the shared HUD font.
+    private Text CreateHudText(string objectName, Transform parent, Vector2 anchoredPosition)
     {
         GameObject textObject = new GameObject(objectName);
         textObject.transform.SetParent(parent, false);
 
         Text text = textObject.AddComponent<Text>();
-        text.font = font;
+        text.font = hudFont;
         text.fontSize = 24;
         text.color = Color.white;
         text.alignment = TextAnchor.MiddleLeft;
+        text.raycastTarget = false;
 
         RectTransform rect = text.GetComponent<RectTransform>();
         rect.anchorMin = new Vector2(0f, 1f);
@@ -267,7 +370,7 @@ public class GameManager : MonoBehaviour
         return text;
     }
 
-    // Called while building the fallback HUD to reuse or create the top-left panel container.
+    // Called while building the fallback HUD to reuse or create the top-left status panel.
     private RectTransform EnsureHudPanel()
     {
         Transform existingPanel = hudCanvas.transform.Find("HUD Panel");
@@ -290,6 +393,152 @@ public class GameManager : MonoBehaviour
         panelRect.sizeDelta = new Vector2(260f, 110f);
 
         return panelRect;
+    }
+
+    // Runs during setup to create the tower shop panel and its buttons the first time they are needed.
+    private void EnsureShopExists()
+    {
+        if (shopPanel != null)
+        {
+            return;
+        }
+
+        GameObject panelObject = new GameObject("Tower Shop Panel");
+        panelObject.transform.SetParent(hudCanvas.transform, false);
+        shopPanel = panelObject;
+
+        Image panelImage = panelObject.AddComponent<Image>();
+        panelImage.color = new Color(0f, 0f, 0f, 0.5f);
+
+        RectTransform panelRect = panelObject.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(1f, 1f);
+        panelRect.anchorMax = new Vector2(1f, 1f);
+        panelRect.pivot = new Vector2(1f, 1f);
+        panelRect.anchoredPosition = new Vector2(-16f, -16f);
+        panelRect.sizeDelta = new Vector2(320f, 220f);
+
+        shopTitleText = CreateHudText("Shop Title", panelRect, new Vector2(16f, -14f));
+        shopTitleText.fontSize = 26;
+
+        shopRangeText = CreateHudText("Range Info", panelRect, new Vector2(16f, -54f));
+        shopRangeText.fontSize = 20;
+        shopRangeText.alignment = TextAnchor.UpperLeft;
+        shopRangeText.GetComponent<RectTransform>().sizeDelta = new Vector2(280f, 52f);
+
+        shopFireRateText = CreateHudText("Fire Rate Info", panelRect, new Vector2(16f, -118f));
+        shopFireRateText.fontSize = 20;
+        shopFireRateText.alignment = TextAnchor.UpperLeft;
+        shopFireRateText.GetComponent<RectTransform>().sizeDelta = new Vector2(280f, 52f);
+
+        rangeUpgradeButton = CreateShopButton("Range Upgrade Button", panelRect, new Vector2(16f, -180f), new Vector2(140f, 28f), out rangeUpgradeButtonText);
+        rangeUpgradeButton.onClick.AddListener(HandleRangeUpgradeClicked);
+
+        fireRateUpgradeButton = CreateShopButton("Fire Rate Upgrade Button", panelRect, new Vector2(164f, -180f), new Vector2(140f, 28f), out fireRateUpgradeButtonText);
+        fireRateUpgradeButton.onClick.AddListener(HandleFireRateUpgradeClicked);
+
+        closeShopButton = CreateShopButton("Close Shop Button", panelRect, new Vector2(214f, -14f), new Vector2(90f, 26f), out Text closeButtonText);
+        closeButtonText.text = "Close";
+        closeShopButton.onClick.AddListener(CloseTowerShop);
+
+        shopPanel.SetActive(false);
+    }
+
+    // Called by EnsureShopExists to create one clickable shop button and its text label.
+    private Button CreateShopButton(string objectName, Transform parent, Vector2 anchoredPosition, Vector2 size, out Text buttonText)
+    {
+        GameObject buttonObject = new GameObject(objectName);
+        buttonObject.transform.SetParent(parent, false);
+
+        Image buttonImage = buttonObject.AddComponent<Image>();
+        buttonImage.color = new Color(0.15f, 0.4f, 0.2f, 0.95f);
+
+        Button button = buttonObject.AddComponent<Button>();
+        RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(0f, 1f);
+        buttonRect.anchorMax = new Vector2(0f, 1f);
+        buttonRect.pivot = new Vector2(0f, 1f);
+        buttonRect.anchoredPosition = anchoredPosition;
+        buttonRect.sizeDelta = size;
+
+        buttonText = CreateHudText($"{objectName} Text", buttonRect, Vector2.zero);
+        buttonText.fontSize = 16;
+        buttonText.alignment = TextAnchor.MiddleCenter;
+
+        RectTransform textRect = buttonText.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.pivot = new Vector2(0.5f, 0.5f);
+        textRect.anchoredPosition = Vector2.zero;
+        textRect.sizeDelta = Vector2.zero;
+
+        return button;
+    }
+
+    // Runs during HUD setup to ensure UI buttons can receive clicks with the Input System.
+    private void EnsureUiEventSystem()
+    {
+        if (FindFirstObjectByType<EventSystem>() != null)
+        {
+            return;
+        }
+
+        GameObject eventSystemObject = new GameObject("UI EventSystem");
+        eventSystemObject.AddComponent<EventSystem>();
+        eventSystemObject.AddComponent<InputSystemUIInputModule>();
+    }
+
+    // Runs every frame to open the shop when a tower is clicked or close it when empty space is clicked.
+    private void HandleTowerSelectionInput()
+    {
+        if (IsGameOver || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            return;
+        }
+
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
+            return;
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            return;
+        }
+
+        Vector3 mouseScreenPosition = Mouse.current.position.ReadValue();
+        Vector3 mouseWorldPosition = mainCamera.ScreenToWorldPoint(mouseScreenPosition);
+        Collider2D[] hits = Physics2D.OverlapPointAll(new Vector2(mouseWorldPosition.x, mouseWorldPosition.y));
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Tower clickedTower = hits[i].GetComponent<Tower>();
+            if (clickedTower != null)
+            {
+                OpenTowerShop(clickedTower);
+                return;
+            }
+        }
+
+        CloseTowerShop();
+    }
+
+    // Called by the range-upgrade button to buy the next range tier on the selected tower.
+    private void HandleRangeUpgradeClicked()
+    {
+        if (selectedTower != null)
+        {
+            selectedTower.TryUpgradeRange();
+        }
+    }
+
+    // Called by the fire-rate-upgrade button to buy the next fire-rate tier on the selected tower.
+    private void HandleFireRateUpgradeClicked()
+    {
+        if (selectedTower != null)
+        {
+            selectedTower.TryUpgradeFireRate();
+        }
     }
 
     // Called whenever health changes so the HUD reflects the current player health.

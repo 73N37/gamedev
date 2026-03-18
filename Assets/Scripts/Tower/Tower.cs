@@ -9,23 +9,47 @@ public class Tower : MonoBehaviour
     [SerializeField] private Projectile projectilePrefab;
     [SerializeField] private Transform shootPoint;
     [SerializeField] private float projectileSpeed = 12f;
+
+    [Header("Upgrade Settings")]
+    [SerializeField] private int[] rangeUpgradeCosts = { 10, 20, 30 };
+    [SerializeField] private float[] rangeUpgradeAmounts = { 1f, 1.5f, 2f };
+    [SerializeField] private int[] fireRateUpgradeCosts = { 10, 20, 30 };
+    [SerializeField] private float[] fireRateUpgradeReductions = { 0.1f, 0.15f, 0.2f };
+    [SerializeField] private float minimumFireRate = 0.1f;
+
     private float fireCooldown = 0f;
+    private int rangeUpgradeTier = 0;
+    private int fireRateUpgradeTier = 0;
+    private TowerRange towerRange;
 
     [HideInInspector] public GameObject target;
 
     public float Range => range;
+    public float CurrentFireRate => fireRate;
+    public int RangeUpgradeTier => rangeUpgradeTier;
+    public int FireRateUpgradeTier => fireRateUpgradeTier;
+    public int MaxRangeUpgradeTier => Mathf.Min(rangeUpgradeCosts.Length, rangeUpgradeAmounts.Length);
+    public int MaxFireRateUpgradeTier => Mathf.Min(fireRateUpgradeCosts.Length, fireRateUpgradeReductions.Length);
+    public bool CanUpgradeRange => rangeUpgradeTier < MaxRangeUpgradeTier;
+    public bool CanUpgradeFireRate => fireRateUpgradeTier < MaxFireRateUpgradeTier;
+    public int NextRangeUpgradeCost => CanUpgradeRange ? rangeUpgradeCosts[rangeUpgradeTier] : -1;
+    public int NextFireRateUpgradeCost => CanUpgradeFireRate ? fireRateUpgradeCosts[fireRateUpgradeTier] : -1;
 
-    // Runs when the tower is created to ensure it has a valid place to spawn projectiles from.
+    // Runs when the tower is created to ensure it can shoot, resize, and be clicked.
     private void Awake()
     {
+        towerRange = GetComponentInChildren<TowerRange>();
+
         if (shootPoint == null)
         {
             shootPoint = transform;
         }
+
+        EnsureClickCollider();
     }
 
     // Runs every frame to face the target, count cooldown time, and shoot when ready.
-    void Update()
+    private void Update()
     {
         if (target == null)
         {
@@ -70,5 +94,57 @@ public class Tower : MonoBehaviour
         Transform origin = shootPoint != null ? shootPoint : transform;
         Projectile projectile = Instantiate(projectilePrefab, origin.position, origin.rotation);
         projectile.Initialize(enemy, damage, projectileSpeed);
+    }
+
+    // Called by the shop UI when the player buys the next range upgrade for this tower.
+    public bool TryUpgradeRange()
+    {
+        if (!CanUpgradeRange || GameManager.main == null)
+        {
+            return false;
+        }
+
+        if (!GameManager.main.TrySpendCurrency(NextRangeUpgradeCost))
+        {
+            return false;
+        }
+
+        range += rangeUpgradeAmounts[rangeUpgradeTier];
+        rangeUpgradeTier++;
+        towerRange?.UpdateRange();
+        GameManager.main.RefreshTowerShop();
+        return true;
+    }
+
+    // Called by the shop UI when the player buys the next fire-rate upgrade for this tower.
+    public bool TryUpgradeFireRate()
+    {
+        if (!CanUpgradeFireRate || GameManager.main == null)
+        {
+            return false;
+        }
+
+        if (!GameManager.main.TrySpendCurrency(NextFireRateUpgradeCost))
+        {
+            return false;
+        }
+
+        fireRate = Mathf.Max(minimumFireRate, fireRate - fireRateUpgradeReductions[fireRateUpgradeTier]);
+        fireRateUpgradeTier++;
+        GameManager.main.RefreshTowerShop();
+        return true;
+    }
+
+    // Runs during setup to give the tower root a small click area separate from its big range trigger.
+    private void EnsureClickCollider()
+    {
+        if (GetComponent<Collider2D>() != null)
+        {
+            return;
+        }
+
+        CircleCollider2D towerCollider = gameObject.AddComponent<CircleCollider2D>();
+        towerCollider.isTrigger = true;
+        towerCollider.radius = 0.6f;
     }
 }
