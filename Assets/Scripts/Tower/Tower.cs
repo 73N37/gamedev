@@ -3,7 +3,7 @@ using UnityEngine;
 public class Tower : MonoBehaviour
 {
 
-    public float range = 8f;
+    public float Range = 8f;
     public int damage = 1;
     public float fireRate = 1f;
     private float fireCooldown = 0f;

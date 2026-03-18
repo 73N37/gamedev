@@ -59,21 +59,6 @@ public class Enemy : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        health -= damage;
-
-        if (health <= 0)
-        {
-            Die();
-        }
-    }
-
-    private void Die()
-    {
-        Destroy(gameObject);
-    }
-
-    public void TakeDamage(int damage)
-    {
         if (damage <= 0 || hasBeenRemoved)
         {
             return;
