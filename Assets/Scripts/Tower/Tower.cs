@@ -2,33 +2,40 @@ using UnityEngine;
 
 public class Tower : MonoBehaviour
 {
-
-    public float Range = 8f;
-    public int damage = 1;
-    public float fireRate = 1f;
+    [SerializeField] private float range = 8f;
+    [SerializeField] private int damage = 1;
+    [SerializeField] private float fireRate = 1f;
     private float fireCooldown = 0f;
 
-    public GameObject target;
-    void Start()
-    {
-        
-    }
+    [HideInInspector] public GameObject target;
+
+    public float Range => range;
 
     void Update()
     {
-        if(target)
+        if (target == null)
         {
-            if(fireCooldown >= fireRate)
-            {
-                transform.right = target.transform.position - transform.position;
-                
-                target.GetComponent<Enemy>().TakeDamage(damage);
-                fireCooldown = 0f;
-            }
-            else
-            {
-                fireCooldown += 1 * Time.deltaTime;
-            }
-        }   
+            fireCooldown = 0f;
+            return;
+        }
+
+        Enemy enemy = target.GetComponent<Enemy>();
+        if (enemy == null)
+        {
+            target = null;
+            fireCooldown = 0f;
+            return;
+        }
+
+        transform.right = target.transform.position - transform.position;
+
+        fireCooldown += Time.deltaTime;
+        if (fireCooldown < fireRate)
+        {
+            return;
+        }
+
+        enemy.TakeDamage(damage);
+        fireCooldown = 0f;
     }
 }

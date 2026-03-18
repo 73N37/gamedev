@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
-    [SerializeField] private int health = 1;
     [SerializeField] private float movespeed = 2f;
     [SerializeField] private int maxHealth = 1;
     [SerializeField] private int reward = 25;
@@ -37,23 +36,34 @@ public class Enemy : MonoBehaviour
 
     void Update()
     {
-        checkpoint = EnemyManager.main.checkpoints[index];
+        if (checkpoint == null)
+        {
+            return;
+        }
 
-        if (Vector2.Distance(checkpoint.transform.position, transform.position) <= 0.1f)
+        if (Vector2.Distance(checkpoint.position, transform.position) <= 0.1f)
         {
             index++;
 
-            if (index >= EnemyManager.main.checkpoints.Length)
+            if (index >= checkpoints.Length)
             {
-                Destroy(gameObject);    // destroy the enemy if it reaches the end of the path
+                ReachGoal();
+                return;
             }
+
+            checkpoint = checkpoints[index];
         }
     }
 
     void FixedUpdate()
     {
-        Vector2 direction = (checkpoint.transform.position - transform.position).normalized;
-        transform.right = checkpoint.transform.position - transform.position;
+        if (checkpoint == null)
+        {
+            return;
+        }
+
+        Vector2 direction = (checkpoint.position - transform.position).normalized;
+        transform.right = checkpoint.position - transform.position;
         rb.linearVelocity = direction * movespeed;
     }
 

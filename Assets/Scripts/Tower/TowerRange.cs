@@ -1,13 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteAlways]
 public class TowerRange : MonoBehaviour
 {
     [SerializeField] private Tower tower;
-    private List<GameObject> targets = new List<GameObject>();
     private List<GameObject> targetsInRange = new List<GameObject>();
-
 
     void Start()
     {
@@ -48,9 +45,9 @@ public class TowerRange : MonoBehaviour
             return;
         }
 
-        targets.RemoveAll(target => target == null);
+        targetsInRange.RemoveAll(target => target == null);
 
-        if (targets.Count > 0)
+        if (targetsInRange.Count > 0)
         {
             tower.target = GetNearestTarget();
         }
@@ -105,16 +102,16 @@ public class TowerRange : MonoBehaviour
 
     private GameObject GetNearestTarget()
     {
-        GameObject nearestTarget = targets[0];
+        GameObject nearestTarget = targetsInRange[0];
         float nearestDistance = Vector2.Distance(tower.transform.position, nearestTarget.transform.position);
 
-        for (int i = 1; i < targets.Count; i++)
+        for (int i = 1; i < targetsInRange.Count; i++)
         {
-            float distance = Vector2.Distance(tower.transform.position, targets[i].transform.position);
+            float distance = Vector2.Distance(tower.transform.position, targetsInRange[i].transform.position);
             if (distance < nearestDistance)
             {
                 nearestDistance = distance;
-                nearestTarget = targets[i];
+                nearestTarget = targetsInRange[i];
             }
         }
 
