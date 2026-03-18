@@ -4,7 +4,7 @@ using UnityEngine;
 // It does three main jobs during gameplay:
 // - It receives a current target from TowerRange.
 // - It rotates to face that target and fires on a cooldown.
-// - It exposes upgrade paths for range, damage, and fire rate to the shop UI.
+// - It exposes upgrade paths for range, damage, and fire rate to the TowerManager shop UI.
 //
 // So the overall attack loop is:
 // 1. TowerRange detects enemies entering the trigger area.
@@ -32,6 +32,10 @@ public class Tower : MonoBehaviour
 
     // projectileSpeed controls how quickly the spawned projectile travels to its target.
     [SerializeField] private float projectileSpeed = 12f;
+
+    // placementCost is the upfront cost used by TowerManager when this tower is placed at runtime.
+    [Header("Economy Settings")]
+    [SerializeField] private int placementCost = 0;
 
     // These arrays define the cost and effect of each upgrade tier in the shop.
     [Header("Upgrade Settings")]
@@ -61,6 +65,7 @@ public class Tower : MonoBehaviour
     public float Range => range;
     public int CurrentDamage => damage;
     public float CurrentFireRate => fireRate;
+    public int PlacementCost => Mathf.Max(0, placementCost);
     public int RangeUpgradeTier => rangeUpgradeTier;
     public int DamageUpgradeTier => damageUpgradeTier;
     public int FireRateUpgradeTier => fireRateUpgradeTier;
@@ -88,6 +93,12 @@ public class Tower : MonoBehaviour
 
         // Make sure the tower has a small collider that can be clicked to open the shop.
         EnsureClickCollider();
+    }
+
+    // Runs when the tower becomes active so TowerManager can track it as part of the tower group.
+    private void OnEnable()
+    {
+        TowerManager.main?.RegisterTower(this);
     }
 
     // Runs every frame to face the target, count cooldown time, and shoot when ready.
@@ -178,8 +189,8 @@ public class Tower : MonoBehaviour
         // Resize the range trigger so targeting matches the new stat immediately.
         towerRange?.UpdateRange();
 
-        // Refresh the shop so the displayed stats and cost update right away.
-        GameManager.main.RefreshTowerShop();
+        // Refresh the tower shop so the displayed stats and cost update right away.
+        TowerManager.main?.RefreshTowerShop();
         return true;
     }
 
@@ -204,8 +215,8 @@ public class Tower : MonoBehaviour
         // Move the damage tier forward so the next purchase uses the next tier values.
         damageUpgradeTier++;
 
-        // Refresh the shop so the displayed stats and cost update right away.
-        GameManager.main.RefreshTowerShop();
+        // Refresh the tower shop so the displayed stats and cost update right away.
+        TowerManager.main?.RefreshTowerShop();
         return true;
     }
 
@@ -230,9 +241,32 @@ public class Tower : MonoBehaviour
         // Move the fire-rate tier forward so the next purchase uses the next tier values.
         fireRateUpgradeTier++;
 
-        // Refresh the shop so the displayed stats and cost update right away.
-        GameManager.main.RefreshTowerShop();
+        // Refresh the tower shop so the displayed stats and cost update right away.
+        TowerManager.main?.RefreshTowerShop();
         return true;
+    }
+
+    // Called by TowerManager when it needs to know how much value this tower currently holds.
+    public int GetSellValue(float sellRefundPercent)
+    {
+        int totalInvestedCurrency = PlacementCost;
+
+        for (int i = 0; i < rangeUpgradeTier; i++)
+        {
+            totalInvestedCurrency += rangeUpgradeCosts[i];
+        }
+
+        for (int i = 0; i < damageUpgradeTier; i++)
+        {
+            totalInvestedCurrency += damageUpgradeCosts[i];
+        }
+
+        for (int i = 0; i < fireRateUpgradeTier; i++)
+        {
+            totalInvestedCurrency += fireRateUpgradeCosts[i];
+        }
+
+        return Mathf.Max(0, Mathf.RoundToInt(totalInvestedCurrency * Mathf.Clamp01(sellRefundPercent)));
     }
 
     // Runs during setup to give the tower root a small click area separate from its big range trigger.
@@ -248,5 +282,11 @@ public class Tower : MonoBehaviour
         CircleCollider2D towerCollider = gameObject.AddComponent<CircleCollider2D>();
         towerCollider.isTrigger = true;
         towerCollider.radius = 0.6f;
+    }
+
+    // Runs when the tower is destroyed so TowerManager stops tracking it.
+    private void OnDestroy()
+    {
+        TowerManager.main?.UnregisterTower(this);
     }
 }
