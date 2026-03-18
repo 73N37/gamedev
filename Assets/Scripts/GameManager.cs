@@ -6,21 +6,46 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+// GameManager is the "big picture" controller for the whole match.
+// It sits above the tower, enemy, and projectile scripts and answers questions like:
+// - How much health does the player have left?
+// - How many coins has the player earned and spent?
+// - Which wave is currently active?
+// - Has the player won or lost the level?
+// - Is the tower shop open, and which tower is selected?
+//
+// In moment-to-moment gameplay, the flow usually looks like this:
+// 1. EnemyManager starts a wave and spawns balloons.
+// 2. Towers detect balloons, aim, and shoot projectiles.
+// 3. Projectiles damage enemies.
+// 4. Enemies either die and reward coins, or escape and damage the player.
+// 5. GameManager updates the HUD and tower shop so the player sees the latest state.
+// 6. When all waves are cleared, or health reaches zero, GameManager ends the match.
+//
+// This script also creates the HUD and upgrade shop at runtime so the scene does not need
+// a manually built canvas to show health, coins, wave number, or tower upgrade buttons.
 // Central game-state controller that also builds the HUD and tower shop at runtime.
 public class GameManager : MonoBehaviour
 {
+    // Singleton reference used by the rest of the project to find the active GameManager quickly.
     public static GameManager main { get; private set; }
 
+    // These serialized values define the starting state of the player when the scene begins.
     [Header("Game Settings")]
     [SerializeField] private int startingLives = 100;
     [SerializeField] private int startingCurrency = 0;
+
+    // This links GameManager to the system that owns wave progression and enemy spawning.
     [SerializeField] private EnemyManager enemyManager;
 
+    // These runtime-only references are created automatically when the fallback HUD is built.
     private Canvas hudCanvas;
     private Font hudFont;
     private Text livesText;
     private Text currencyText;
     private Text waveText;
+
+    // These runtime-only references belong to the tower shop panel that appears when a tower is clicked.
     private GameObject shopPanel;
     private Text shopTitleText;
     private Text shopRangeText;
@@ -35,11 +60,13 @@ public class GameManager : MonoBehaviour
     private Text fireRateUpgradeButtonText;
     private Tower selectedTower;
 
+    // These events are optional extension points for UI or other systems that want live updates.
     public event Action<int, int> LivesChanged;
     public event Action<int> CurrencyChanged;
     public event Action<int, int> WaveChanged;
     public event Action<bool, bool> GameStateChanged;
 
+    // These properties expose the core match state in a safe read-only way to the rest of the project.
     public int Lives { get; private set; }
     public int Currency { get; private set; }
     public int CurrentWave => enemyManager != null ? enemyManager.CurrentWave : 0;
@@ -80,27 +107,33 @@ public class GameManager : MonoBehaviour
     // Runs once after Awake to find dependencies, create the HUD, and push the starting values.
     private void Start()
     {
+        // If the wave system was not linked in the Inspector, find it in the current scene automatically.
         if (enemyManager == null)
         {
             enemyManager = FindFirstObjectByType<EnemyManager>();
         }
 
+        // Build the fallback HUD before any values are pushed into its text fields.
         EnsureHudExists();
 
+        // Clamp the starting values so the player never starts dead or with negative coins.
         Lives = Mathf.Max(1, startingLives);
         Currency = Mathf.Max(0, startingCurrency);
 
+        // Listen to wave events so the HUD stays synchronized with the spawning system.
         if (enemyManager != null)
         {
             enemyManager.WaveStarted += HandleWaveStarted;
             enemyManager.AllWavesCompleted += HandleAllWavesCompleted;
         }
 
+        // Broadcast the starting state once so other scripts can initialize from the correct values.
         LivesChanged?.Invoke(Lives, startingLives);
         CurrencyChanged?.Invoke(Currency);
         WaveChanged?.Invoke(CurrentWave, TotalWaves);
         GameStateChanged?.Invoke(IsGameOver, IsGameWon);
 
+        // Write the initial health, coin, and wave text into the HUD immediately.
         UpdateLivesHud();
         UpdateCurrencyHud();
         UpdateWaveHud(CurrentWave, TotalWaves);
@@ -240,30 +273,41 @@ public class GameManager : MonoBehaviour
     // Called whenever currency or tower upgrade data changes so the shop stays current.
     public void RefreshTowerShop()
     {
+        // If the runtime shop panel has not been built yet, there is nothing to update.
         if (shopPanel == null)
         {
             return;
         }
 
+        // If the selected tower no longer exists, close the shop instead of showing stale data.
         if (selectedTower == null)
         {
             CloseTowerShop();
             return;
         }
 
+        // Show the selected tower name so the player knows which tower is being upgraded.
         shopTitleText.text = $"{selectedTower.name} Shop";
+
+        // Show the current range tier and the actual numeric range value.
         shopRangeText.text = $"Range Tier: {selectedTower.RangeUpgradeTier}/{selectedTower.MaxRangeUpgradeTier}\nCurrent Range: {selectedTower.Range:F1}";
+
+        // Show the current damage tier and the current damage dealt per shot.
         shopDamageText.text = $"Damage Tier: {selectedTower.DamageUpgradeTier}/{selectedTower.MaxDamageUpgradeTier}\nCurrent Damage: {selectedTower.CurrentDamage}";
+
+        // Show the current fire-rate tier and the current delay between shots.
         shopFireRateText.text = $"Fire Rate Tier: {selectedTower.FireRateUpgradeTier}/{selectedTower.MaxFireRateUpgradeTier}\nCurrent Delay: {selectedTower.CurrentFireRate:F2}s";
 
         if (selectedTower.CanUpgradeRange)
         {
+            // Show the next range-upgrade price and enable the button only when the player can afford it.
             shopRangeText.text += $"\nNext Upgrade Cost: {selectedTower.NextRangeUpgradeCost} coins";
             rangeUpgradeButton.interactable = Currency >= selectedTower.NextRangeUpgradeCost;
             rangeUpgradeButtonText.text = "Upgrade Range";
         }
         else
         {
+            // If the path is maxed, replace the price with a finished-state message.
             shopRangeText.text += "\nMax Tier Reached";
             rangeUpgradeButton.interactable = false;
             rangeUpgradeButtonText.text = "Range Maxed";
@@ -271,12 +315,14 @@ public class GameManager : MonoBehaviour
 
         if (selectedTower.CanUpgradeDamage)
         {
+            // Show the next damage-upgrade price and enable the button only when the player can afford it.
             shopDamageText.text += $"\nNext Upgrade Cost: {selectedTower.NextDamageUpgradeCost} coins";
             damageUpgradeButton.interactable = Currency >= selectedTower.NextDamageUpgradeCost;
             damageUpgradeButtonText.text = "Upgrade Damage";
         }
         else
         {
+            // If the path is maxed, replace the price with a finished-state message.
             shopDamageText.text += "\nMax Tier Reached";
             damageUpgradeButton.interactable = false;
             damageUpgradeButtonText.text = "Damage Maxed";
@@ -284,12 +330,14 @@ public class GameManager : MonoBehaviour
 
         if (selectedTower.CanUpgradeFireRate)
         {
+            // Show the next fire-rate-upgrade price and enable the button only when the player can afford it.
             shopFireRateText.text += $"\nNext Upgrade Cost: {selectedTower.NextFireRateUpgradeCost} coins";
             fireRateUpgradeButton.interactable = Currency >= selectedTower.NextFireRateUpgradeCost;
             fireRateUpgradeButtonText.text = "Upgrade Fire Rate";
         }
         else
         {
+            // If the path is maxed, replace the price with a finished-state message.
             shopFireRateText.text += "\nMax Tier Reached";
             fireRateUpgradeButton.interactable = false;
             fireRateUpgradeButtonText.text = "Fire Rate Maxed";
@@ -325,11 +373,13 @@ public class GameManager : MonoBehaviour
     // Runs during startup to create the HUD automatically if the scene has none assigned.
     private void EnsureHudExists()
     {
+        // If the three main HUD labels already exist, the fallback UI has already been built.
         if (livesText != null && currencyText != null && waveText != null)
         {
             return;
         }
 
+        // Create the screen-space canvas that will hold the auto-generated HUD and shop.
         if (hudCanvas == null)
         {
             GameObject canvasObject = new GameObject("HUD Canvas");
@@ -339,28 +389,34 @@ public class GameManager : MonoBehaviour
             canvasObject.AddComponent<GraphicRaycaster>();
         }
 
+        // Load the built-in font used by the runtime text objects.
         if (hudFont == null)
         {
             hudFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         }
 
+        // Create or reuse the top-left HUD background panel.
         RectTransform hudParent = EnsureHudPanel();
 
         if (livesText == null)
         {
+            // Build the text label that shows player health.
             livesText = CreateHudText("Lives Text", hudParent, new Vector2(16f, -14f));
         }
 
         if (currencyText == null)
         {
+            // Build the text label that shows the player's coins.
             currencyText = CreateHudText("Coins Text", hudParent, new Vector2(16f, -44f));
         }
 
         if (waveText == null)
         {
+            // Build the text label that shows the current wave.
             waveText = CreateHudText("Wave Text", hudParent, new Vector2(16f, -74f));
         }
 
+        // Make sure buttons in the runtime shop can receive click events.
         EnsureUiEventSystem();
     }
 
@@ -517,36 +573,47 @@ public class GameManager : MonoBehaviour
     // Runs every frame to open the shop when a tower is clicked or close it when empty space is clicked.
     private void HandleTowerSelectionInput()
     {
+        // Ignore clicks after the match ends, when no mouse exists, or when the left button was not just pressed.
         if (IsGameOver || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
         {
             return;
         }
 
+        // Ignore world selection if the player is currently clicking on UI.
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
             return;
         }
 
+        // Use the main camera to convert the mouse cursor from screen space into the world.
         Camera mainCamera = Camera.main;
         if (mainCamera == null)
         {
             return;
         }
 
+        // Read the current mouse position on the screen.
         Vector3 mouseScreenPosition = Mouse.current.position.ReadValue();
+
+        // Convert the cursor position into world coordinates.
         Vector3 mouseWorldPosition = mainCamera.ScreenToWorldPoint(mouseScreenPosition);
+
+        // Ask Physics2D for every collider under the cursor.
         Collider2D[] hits = Physics2D.OverlapPointAll(new Vector2(mouseWorldPosition.x, mouseWorldPosition.y));
 
         for (int i = 0; i < hits.Length; i++)
         {
+            // Check whether this clicked collider belongs to a tower.
             Tower clickedTower = hits[i].GetComponent<Tower>();
             if (clickedTower != null)
             {
+                // Open the clicked tower's shop and stop searching further hits.
                 OpenTowerShop(clickedTower);
                 return;
             }
         }
 
+        // If the player clicked somewhere that is not a tower, close the shop.
         CloseTowerShop();
     }
 
