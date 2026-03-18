@@ -14,10 +14,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private EnemyManager enemyManager;
 
     [Header("HUD")]
-    [SerializeField] private Canvas hudCanvas;
-    [SerializeField] private Text livesText;
-    [SerializeField] private Text currencyText;
-    [SerializeField] private Text waveText;
+    private Canvas hudCanvas;
+    private Text livesText;
+     private Text currencyText;
+     private Text waveText;
 
     public event Action<int, int> LivesChanged;
     public event Action<int> CurrencyChanged;
