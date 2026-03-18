@@ -69,6 +69,7 @@ public class Projectile : MonoBehaviour
 
         if (target != null)
         {
+            GameManager.main?.RegisterBalloonHit();
             target.TakeDamage(damage);
         }
 

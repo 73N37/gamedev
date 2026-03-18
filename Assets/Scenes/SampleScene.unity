@@ -233,10 +233,13 @@ MonoBehaviour:
   spawnPoint: {fileID: 476666668}
   basicEnemy: {fileID: 8527689348121436776, guid: c477ce6e2a3b0e84ab6f25ac4e002f2f, type: 3}
   basicEnemyCount: 2
+  basicEnemyHealth: 1
   fastEnemy: {fileID: 5935498212718778471, guid: fffa0f1e9685adc438e0bda14575163f, type: 3}
   fastEnemyCount: 1
+  fastEnemyHealth: 2
   tankEnemy: {fileID: 1318820653800899980, guid: c0f098875d37067419f5381a10971809, type: 3}
   tankEnemyCount: 1
+  tankEnemyHealth: 5
   totalWaves: 2
   spawnDelay: 2
   timeBetweenWaves: 2
@@ -557,6 +560,10 @@ PrefabInstance:
       propertyPath: target
       value: 
       objectReference: {fileID: 43177709652252534, guid: c9ba402414b6cbb4c97f15bbdff42b07, type: 3}
+    - target: {fileID: 7498886283671186597, guid: 12697826e5aa9a64e99290be2ae1b0b3, type: 3}
+      propertyPath: projectilePrefab
+      value: 
+      objectReference: {fileID: 114000000000000001, guid: 0f7d4c6c30f74c84ad226ad73455f558, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

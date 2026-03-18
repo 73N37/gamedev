@@ -5,6 +5,13 @@ using UnityEngine;
 
 public class EnemyManager : MonoBehaviour
 {
+    [Serializable]
+    private struct EnemySpawnInfo
+    {
+        public GameObject prefab;
+        public int health;
+    }
+
     public static EnemyManager main;
     public Transform[] checkpoints;
     public Transform spawnPoint;
@@ -12,14 +19,17 @@ public class EnemyManager : MonoBehaviour
     [Header("Basic Enemy settings")]
     [SerializeField] private GameObject basicEnemy;
     [SerializeField] private int basicEnemyCount = 2;
+    [SerializeField] private int basicEnemyHealth = 1;
 
     [Header("Fast Enemy settings")]
     [SerializeField] private GameObject fastEnemy;
     [SerializeField] private int fastEnemyCount = 2;
+    [SerializeField] private int fastEnemyHealth = 2;
 
     [Header("Tank Enemy settings")]
     [SerializeField] private GameObject tankEnemy;
     [SerializeField] private int tankEnemyCount = 1;
+    [SerializeField] private int tankEnemyHealth = 5;
 
     [Header("Wave settings")]
     [SerializeField] private int totalWaves = 3;
@@ -88,38 +98,53 @@ public class EnemyManager : MonoBehaviour
             yield return new WaitForSeconds(timeBetweenWaves);
         }
 
-        List<GameObject> waveSet = Shuffle(BuildWave(waveNumber));
+        List<EnemySpawnInfo> waveSet = Shuffle(BuildWave(waveNumber));
         yield return StartCoroutine(SpawnWave(waveSet));
 
         isSpawning = false;
     }
 
-    private List<GameObject> BuildWave(int waveNumber)
+    private List<EnemySpawnInfo> BuildWave(int waveNumber)
     {
         int currentBasicEnemyCount = basicEnemyCount + waveNumber;
         int currentFastEnemyCount = fastEnemyCount + waveNumber;
         int currentTankEnemyCount = tankEnemyCount + waveNumber;
-        List<GameObject> waveSet = new List<GameObject>();
+        List<EnemySpawnInfo> waveSet = new List<EnemySpawnInfo>();
 
-        for (int i = 0; i < currentBasicEnemyCount; i++) {
-            waveSet.Add(basicEnemy);
+        for (int i = 0; i < currentBasicEnemyCount; i++)
+        {
+            waveSet.Add(new EnemySpawnInfo
+            {
+                prefab = basicEnemy,
+                health = basicEnemyHealth
+            });
         }
 
-        for (int i = 0; i < currentFastEnemyCount; i++) {
-            waveSet.Add(fastEnemy);
+        for (int i = 0; i < currentFastEnemyCount; i++)
+        {
+            waveSet.Add(new EnemySpawnInfo
+            {
+                prefab = fastEnemy,
+                health = fastEnemyHealth
+            });
         }
 
-        for (int i = 0; i < currentTankEnemyCount; i++) {
-            waveSet.Add(tankEnemy);
+        for (int i = 0; i < currentTankEnemyCount; i++)
+        {
+            waveSet.Add(new EnemySpawnInfo
+            {
+                prefab = tankEnemy,
+                health = tankEnemyHealth
+            });
         }
 
         return waveSet;
     }
 
-    private List<GameObject> Shuffle(List<GameObject> waveSet)
+    private List<EnemySpawnInfo> Shuffle(List<EnemySpawnInfo> waveSet)
     {
-       List<GameObject> temp = new List<GameObject>();
-       List<GameObject> result = new List<GameObject>();
+       List<EnemySpawnInfo> temp = new List<EnemySpawnInfo>();
+       List<EnemySpawnInfo> result = new List<EnemySpawnInfo>();
        temp.AddRange(waveSet);
        for (int i =0; i < waveSet.Count; i++)
        {
@@ -130,7 +155,7 @@ public class EnemyManager : MonoBehaviour
        return result;
     }
 
-    private IEnumerator SpawnWave(List<GameObject> waveSet)
+    private IEnumerator SpawnWave(List<EnemySpawnInfo> waveSet)
     {
         if (spawnPoint == null || checkpoints == null || checkpoints.Length == 0)
         {
@@ -140,12 +165,18 @@ public class EnemyManager : MonoBehaviour
 
         for (int i = 0; i < waveSet.Count; i++)
         {
-            if (waveSet[i] == null)
+            if (waveSet[i].prefab == null)
             {
                 continue;
             }
 
-            Instantiate(waveSet[i], spawnPoint.position, Quaternion.identity);
+            GameObject enemyObject = Instantiate(waveSet[i].prefab, spawnPoint.position, Quaternion.identity);
+            Enemy enemy = enemyObject.GetComponent<Enemy>();
+            if (enemy != null)
+            {
+                enemy.Initialize(waveSet[i].health);
+            }
+
             yield return new WaitForSeconds(spawnDelay);
         }
     }

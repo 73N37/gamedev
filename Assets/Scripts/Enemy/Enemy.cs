@@ -20,6 +20,12 @@ public class Enemy : MonoBehaviour
         currentHealth = Mathf.Max(1, maxHealth);
     }
 
+    public void Initialize(int health)
+    {
+        maxHealth = Mathf.Max(1, health);
+        currentHealth = maxHealth;
+    }
+
     void Start()
     {
         if (EnemyManager.main == null || EnemyManager.main.checkpoints == null || EnemyManager.main.checkpoints.Length == 0)

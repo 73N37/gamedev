@@ -1,15 +1,22 @@
 using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager main { get; private set; }
 
     [Header("Game Settings")]
-    [SerializeField] private int startingLives = 20;
-    [SerializeField] private int startingCurrency = 500;
+    [SerializeField] private int startingLives = 100;
+    [SerializeField] private int startingCurrency = 0;
     [SerializeField] private EnemyManager enemyManager;
+
+    [Header("HUD")]
+    [SerializeField] private Canvas hudCanvas;
+    [SerializeField] private Text livesText;
+    [SerializeField] private Text currencyText;
+    [SerializeField] private Text waveText;
 
     public event Action<int, int> LivesChanged;
     public event Action<int> CurrencyChanged;
@@ -23,6 +30,16 @@ public class GameManager : MonoBehaviour
     public bool IsGameOver { get; private set; }
     public bool IsGameWon { get; private set; }
     public bool IsPaused => Time.timeScale <= 0f;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void EnsureGameManagerExists()
+    {
+        if (FindFirstObjectByType<GameManager>() == null)
+        {
+            GameObject gameManagerObject = new GameObject("GameManager");
+            gameManagerObject.AddComponent<GameManager>();
+        }
+    }
 
     private void Awake()
     {
@@ -42,6 +59,8 @@ public class GameManager : MonoBehaviour
             enemyManager = FindFirstObjectByType<EnemyManager>();
         }
 
+        EnsureHudExists();
+
         Lives = Mathf.Max(1, startingLives);
         Currency = Mathf.Max(0, startingCurrency);
 
@@ -55,6 +74,10 @@ public class GameManager : MonoBehaviour
         CurrencyChanged?.Invoke(Currency);
         WaveChanged?.Invoke(CurrentWave, TotalWaves);
         GameStateChanged?.Invoke(IsGameOver, IsGameWon);
+
+        UpdateLivesHud();
+        UpdateCurrencyHud();
+        UpdateWaveHud(CurrentWave, TotalWaves);
     }
 
     private void OnDestroy()
@@ -98,11 +121,17 @@ public class GameManager : MonoBehaviour
 
         Currency += amount;
         CurrencyChanged?.Invoke(Currency);
+        UpdateCurrencyHud();
     }
 
     public void EnemyDefeated(int reward)
     {
-        AddCurrency(reward);
+        _ = reward;
+    }
+
+    public void RegisterBalloonHit()
+    {
+        AddCurrency(1);
     }
 
     public void EnemyEscaped(Enemy enemy, int lifePenalty)
@@ -124,6 +153,7 @@ public class GameManager : MonoBehaviour
 
         Lives = Mathf.Max(0, Lives - amount);
         LivesChanged?.Invoke(Lives, startingLives);
+        UpdateLivesHud();
 
         if (Lives == 0)
         {
@@ -150,6 +180,7 @@ public class GameManager : MonoBehaviour
     private void HandleWaveStarted(int waveNumber, int totalWaves)
     {
         WaveChanged?.Invoke(waveNumber, totalWaves);
+        UpdateWaveHud(waveNumber, totalWaves);
     }
 
     private void HandleAllWavesCompleted()
@@ -166,5 +197,109 @@ public class GameManager : MonoBehaviour
         IsGameWon = playerWon;
         Time.timeScale = 1f;
         GameStateChanged?.Invoke(IsGameOver, IsGameWon);
+    }
+
+    private void EnsureHudExists()
+    {
+        if (livesText != null && currencyText != null && waveText != null)
+        {
+            return;
+        }
+
+        if (hudCanvas == null)
+        {
+            GameObject canvasObject = new GameObject("HUD Canvas");
+            hudCanvas = canvasObject.AddComponent<Canvas>();
+            hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvasObject.AddComponent<CanvasScaler>();
+            canvasObject.AddComponent<GraphicRaycaster>();
+        }
+
+        Font hudFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        RectTransform hudParent = EnsureHudPanel();
+
+        if (livesText == null)
+        {
+            livesText = CreateHudText("Lives Text", hudParent, hudFont, new Vector2(16f, -14f));
+        }
+
+        if (currencyText == null)
+        {
+            currencyText = CreateHudText("Coins Text", hudParent, hudFont, new Vector2(16f, -44f));
+        }
+
+        if (waveText == null)
+        {
+            waveText = CreateHudText("Wave Text", hudParent, hudFont, new Vector2(16f, -74f));
+        }
+    }
+
+    private Text CreateHudText(string objectName, Transform parent, Font font, Vector2 anchoredPosition)
+    {
+        GameObject textObject = new GameObject(objectName);
+        textObject.transform.SetParent(parent, false);
+
+        Text text = textObject.AddComponent<Text>();
+        text.font = font;
+        text.fontSize = 24;
+        text.color = Color.white;
+        text.alignment = TextAnchor.MiddleLeft;
+
+        RectTransform rect = text.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = anchoredPosition;
+        rect.sizeDelta = new Vector2(220f, 28f);
+
+        return text;
+    }
+
+    private RectTransform EnsureHudPanel()
+    {
+        Transform existingPanel = hudCanvas.transform.Find("HUD Panel");
+        if (existingPanel != null)
+        {
+            return existingPanel as RectTransform;
+        }
+
+        GameObject panelObject = new GameObject("HUD Panel");
+        panelObject.transform.SetParent(hudCanvas.transform, false);
+
+        Image panelImage = panelObject.AddComponent<Image>();
+        panelImage.color = new Color(0f, 0f, 0f, 0.35f);
+
+        RectTransform panelRect = panelObject.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0f, 1f);
+        panelRect.anchorMax = new Vector2(0f, 1f);
+        panelRect.pivot = new Vector2(0f, 1f);
+        panelRect.anchoredPosition = new Vector2(16f, -16f);
+        panelRect.sizeDelta = new Vector2(260f, 110f);
+
+        return panelRect;
+    }
+
+    private void UpdateLivesHud()
+    {
+        if (livesText != null)
+        {
+            livesText.text = $"Health: {Lives}";
+        }
+    }
+
+    private void UpdateCurrencyHud()
+    {
+        if (currencyText != null)
+        {
+            currencyText.text = $"Coins: {Currency}";
+        }
+    }
+
+    private void UpdateWaveHud(int waveNumber, int totalWaves)
+    {
+        if (waveText != null)
+        {
+            waveText.text = $"Wave: {waveNumber}/{Mathf.Max(totalWaves, 1)}";
+        }
     }
 }
