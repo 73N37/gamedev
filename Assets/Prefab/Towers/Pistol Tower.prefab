@@ -106,10 +106,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc0e0fd4257fe0d49bdd204db117d507, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Tower
-  Range: 8
-  damage: 20
-  fireRate: 100
-  target: {fileID: 3124402425009014237, guid: a4675b51945c5433480eb63e6eec2f65, type: 3}
+  range: 8
+  damage: 1
+  fireRate: 1
+  projectilePrefab: {fileID: 500000000000000001, guid: 0f7d4c6c30f74c84ad226ad73455f558, type: 3}
+  shootPoint: {fileID: 1024018696531750643}
+  projectileSpeed: 14
+  target: {fileID: 0}
 --- !u!1 &1822263935155210452
 GameObject:
   m_ObjectHideFlags: 0

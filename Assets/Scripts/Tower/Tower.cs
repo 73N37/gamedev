@@ -5,11 +5,22 @@ public class Tower : MonoBehaviour
     [SerializeField] private float range = 8f;
     [SerializeField] private int damage = 1;
     [SerializeField] private float fireRate = 1f;
+    [SerializeField] private Projectile projectilePrefab;
+    [SerializeField] private Transform shootPoint;
+    [SerializeField] private float projectileSpeed = 12f;
     private float fireCooldown = 0f;
 
     [HideInInspector] public GameObject target;
 
     public float Range => range;
+
+    private void Awake()
+    {
+        if (shootPoint == null)
+        {
+            shootPoint = transform;
+        }
+    }
 
     void Update()
     {
@@ -35,7 +46,25 @@ public class Tower : MonoBehaviour
             return;
         }
 
-        enemy.TakeDamage(damage);
+        Fire(enemy);
         fireCooldown = 0f;
+    }
+
+    private void Fire(Enemy enemy)
+    {
+        if (enemy == null)
+        {
+            return;
+        }
+
+        if (projectilePrefab == null)
+        {
+            enemy.TakeDamage(damage);
+            return;
+        }
+
+        Transform origin = shootPoint != null ? shootPoint : transform;
+        Projectile projectile = Instantiate(projectilePrefab, origin.position, origin.rotation);
+        projectile.Initialize(enemy, damage, projectileSpeed);
     }
 }
