@@ -3,8 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Builds wave contents, spawns enemies over time, and tracks when each wave is cleared.
 public class EnemyManager : MonoBehaviour
 {
+    // Temporary per-spawn data used while a wave is being built and instantiated.
+    [Serializable]
+    private struct EnemySpawnInfo
+    {
+        public GameObject prefab;
+        public int health;
+        public int coinReward;
+    }
+
     public static EnemyManager main;
     public Transform[] checkpoints;
     public Transform spawnPoint;
@@ -12,19 +22,28 @@ public class EnemyManager : MonoBehaviour
     [Header("Basic Enemy settings")]
     [SerializeField] private GameObject basicEnemy;
     [SerializeField] private int basicEnemyCount = 2;
+    [SerializeField] private int basicEnemyHealth = 1;
+    [SerializeField] private int basicEnemyCoinReward = 1;
 
     [Header("Fast Enemy settings")]
     [SerializeField] private GameObject fastEnemy;
     [SerializeField] private int fastEnemyCount = 2;
+    [SerializeField] private int fastEnemyHealth = 2;
+    [SerializeField] private int fastEnemyCoinReward = 2;
 
     [Header("Tank Enemy settings")]
     [SerializeField] private GameObject tankEnemy;
     [SerializeField] private int tankEnemyCount = 1;
+    [SerializeField] private int tankEnemyHealth = 5;
+    [SerializeField] private int tankEnemyCoinReward = 3;
 
     [Header("Wave settings")]
-    [SerializeField] private int totalWaves = 3;
+    [SerializeField] private int totalWaves = 20;
     [SerializeField] private float spawnDelay = 0.5f;
     [SerializeField] private float timeBetweenWaves = 2f;
+    [SerializeField] private int basicEnemyGrowthPerWave = 1;
+    [SerializeField] private int fastEnemyGrowthPerWave = 1;
+    [SerializeField] private int tankEnemyGrowthPerWave = 1;
     private int currentWave = 0;
     private bool isSpawning;
     private readonly HashSet<Enemy> activeEnemies = new HashSet<Enemy>();
@@ -38,16 +57,19 @@ public class EnemyManager : MonoBehaviour
     public int ActiveEnemyCount => activeEnemies.Count;
     public bool IsSpawning => isSpawning;
 
+    // Runs when the scene creates this manager and stores the singleton used by enemies.
     void Awake()
     {
         main = this;
     }
 
+    // Runs once at scene start to begin the first wave automatically.
     void Start()
     {
         StartNextWave();
     }
 
+    // Runs every frame to decide when to start the next wave and when all waves are complete.
     private void Update()
     {
         if (isSpawning)
@@ -67,6 +89,7 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    // Called internally when the next wave should begin.
     private void StartNextWave()
     {
         if (currentWave >= totalWaves)
@@ -79,6 +102,7 @@ public class EnemyManager : MonoBehaviour
         StartCoroutine(SpawnWaveRoutine(currentWave - 1));
     }
 
+    // Coroutine started for each wave so delays and spawns can happen over time.
     private IEnumerator SpawnWaveRoutine(int waveNumber)
     {
         isSpawning = true;
@@ -88,38 +112,52 @@ public class EnemyManager : MonoBehaviour
             yield return new WaitForSeconds(timeBetweenWaves);
         }
 
-        List<GameObject> waveSet = Shuffle(BuildWave(waveNumber));
+        List<EnemySpawnInfo> waveSet = Shuffle(BuildWave(waveNumber));
         yield return StartCoroutine(SpawnWave(waveSet));
 
         isSpawning = false;
     }
 
-    private List<GameObject> BuildWave(int waveNumber)
+    // Called at the start of a wave to build the list of enemies and stats for that wave.
+    private List<EnemySpawnInfo> BuildWave(int waveNumber)
     {
-        int currentBasicEnemyCount = basicEnemyCount + waveNumber;
-        int currentFastEnemyCount = fastEnemyCount + waveNumber;
-        int currentTankEnemyCount = tankEnemyCount + waveNumber;
-        List<GameObject> waveSet = new List<GameObject>();
+        List<EnemySpawnInfo> waveSet = new List<EnemySpawnInfo>();
 
-        for (int i = 0; i < currentBasicEnemyCount; i++) {
-            waveSet.Add(basicEnemy);
-        }
-
-        for (int i = 0; i < currentFastEnemyCount; i++) {
-            waveSet.Add(fastEnemy);
-        }
-
-        for (int i = 0; i < currentTankEnemyCount; i++) {
-            waveSet.Add(tankEnemy);
-        }
+        AddEnemiesForWave(waveSet, basicEnemy, basicEnemyCount, basicEnemyGrowthPerWave, basicEnemyHealth, basicEnemyCoinReward, waveNumber);
+        AddEnemiesForWave(waveSet, fastEnemy, fastEnemyCount, fastEnemyGrowthPerWave, fastEnemyHealth, fastEnemyCoinReward, waveNumber);
+        AddEnemiesForWave(waveSet, tankEnemy, tankEnemyCount, tankEnemyGrowthPerWave, tankEnemyHealth, tankEnemyCoinReward, waveNumber);
 
         return waveSet;
     }
 
-    private List<GameObject> Shuffle(List<GameObject> waveSet)
+    // Called by BuildWave to scale one enemy type upward each wave so later waves get harder.
+    private void AddEnemiesForWave(
+        List<EnemySpawnInfo> waveSet,
+        GameObject prefab,
+        int baseCount,
+        int growthPerWave,
+        int health,
+        int coinReward,
+        int waveNumber)
     {
-       List<GameObject> temp = new List<GameObject>();
-       List<GameObject> result = new List<GameObject>();
+        int enemyCount = Mathf.Max(0, baseCount + (waveNumber * growthPerWave));
+
+        for (int i = 0; i < enemyCount; i++)
+        {
+            waveSet.Add(new EnemySpawnInfo
+            {
+                prefab = prefab,
+                health = health,
+                coinReward = coinReward
+            });
+        }
+    }
+
+    // Called before spawning to randomize the order of enemies in the wave.
+    private List<EnemySpawnInfo> Shuffle(List<EnemySpawnInfo> waveSet)
+    {
+       List<EnemySpawnInfo> temp = new List<EnemySpawnInfo>();
+       List<EnemySpawnInfo> result = new List<EnemySpawnInfo>();
        temp.AddRange(waveSet);
        for (int i =0; i < waveSet.Count; i++)
        {
@@ -130,7 +168,8 @@ public class EnemyManager : MonoBehaviour
        return result;
     }
 
-    private IEnumerator SpawnWave(List<GameObject> waveSet)
+    // Coroutine that instantiates enemies one by one and applies their per-type stats.
+    private IEnumerator SpawnWave(List<EnemySpawnInfo> waveSet)
     {
         if (spawnPoint == null || checkpoints == null || checkpoints.Length == 0)
         {
@@ -140,16 +179,23 @@ public class EnemyManager : MonoBehaviour
 
         for (int i = 0; i < waveSet.Count; i++)
         {
-            if (waveSet[i] == null)
+            if (waveSet[i].prefab == null)
             {
                 continue;
             }
 
-            Instantiate(waveSet[i], spawnPoint.position, Quaternion.identity);
+            GameObject enemyObject = Instantiate(waveSet[i].prefab, spawnPoint.position, Quaternion.identity);
+            Enemy enemy = enemyObject.GetComponent<Enemy>();
+            if (enemy != null)
+            {
+                enemy.Initialize(waveSet[i].health, waveSet[i].coinReward);
+            }
+
             yield return new WaitForSeconds(spawnDelay);
         }
     }
 
+    // Called by each Enemy in Start so the manager can count living enemies in the current wave.
     public void RegisterEnemy(Enemy enemy)
     {
         if (enemy == null)
@@ -160,6 +206,7 @@ public class EnemyManager : MonoBehaviour
         activeEnemies.Add(enemy);
     }
 
+    // Called by each Enemy in OnDestroy so the manager knows when a wave has been cleared.
     public void UnregisterEnemy(Enemy enemy)
     {
         if (enemy == null)

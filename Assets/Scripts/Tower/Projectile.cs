@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// Simple projectile that chases one enemy, deals damage once, and then destroys itself.
 public class Projectile : MonoBehaviour
 {
     [SerializeField] private float maxLifetime = 3f;
@@ -9,6 +10,7 @@ public class Projectile : MonoBehaviour
     private float speed;
     private bool hasHit;
 
+    // Called immediately after spawn so the projectile knows what to chase and how hard to hit.
     public void Initialize(Enemy newTarget, int newDamage, float newSpeed)
     {
         target = newTarget;
@@ -18,6 +20,7 @@ public class Projectile : MonoBehaviour
         Destroy(gameObject, maxLifetime);
     }
 
+    // Runs every frame to move the projectile toward its target or remove it if the target disappears.
     private void Update()
     {
         if (hasHit)
@@ -44,6 +47,7 @@ public class Projectile : MonoBehaviour
         transform.position += direction.normalized * moveDistance;
     }
 
+    // Called by Unity if the projectile trigger overlaps its target before the manual distance check.
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (hasHit)
@@ -58,6 +62,7 @@ public class Projectile : MonoBehaviour
         }
     }
 
+    // Called once when the projectile reaches its target so it can apply damage and disappear.
     private void HitTarget()
     {
         if (hasHit)
