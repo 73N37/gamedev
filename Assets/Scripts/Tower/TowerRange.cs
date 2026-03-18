@@ -67,7 +67,7 @@ public class TowerRange : MonoBehaviour
     {
         if(collision.CompareTag("Enemy"))
         {
-            targetsInRange.Add(collision.gameObject);
+            targets.Add(collision.gameObject);
         }
     }
 
@@ -76,7 +76,7 @@ public class TowerRange : MonoBehaviour
     {
         if (collision.CompareTag("Enemy"))
         {
-            targetsInRange.Remove(collision.gameObject);
+            targets.Remove(collision.gameObject);
         }
     }
 
