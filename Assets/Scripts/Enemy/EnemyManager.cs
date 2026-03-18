@@ -10,6 +10,7 @@ public class EnemyManager : MonoBehaviour
     {
         public GameObject prefab;
         public int health;
+        public int coinReward;
     }
 
     public static EnemyManager main;
@@ -20,16 +21,19 @@ public class EnemyManager : MonoBehaviour
     [SerializeField] private GameObject basicEnemy;
     [SerializeField] private int basicEnemyCount = 2;
     [SerializeField] private int basicEnemyHealth = 1;
+    [SerializeField] private int basicEnemyCoinReward = 1;
 
     [Header("Fast Enemy settings")]
     [SerializeField] private GameObject fastEnemy;
     [SerializeField] private int fastEnemyCount = 2;
     [SerializeField] private int fastEnemyHealth = 2;
+    [SerializeField] private int fastEnemyCoinReward = 2;
 
     [Header("Tank Enemy settings")]
     [SerializeField] private GameObject tankEnemy;
     [SerializeField] private int tankEnemyCount = 1;
     [SerializeField] private int tankEnemyHealth = 5;
+    [SerializeField] private int tankEnemyCoinReward = 3;
 
     [Header("Wave settings")]
     [SerializeField] private int totalWaves = 3;
@@ -116,7 +120,8 @@ public class EnemyManager : MonoBehaviour
             waveSet.Add(new EnemySpawnInfo
             {
                 prefab = basicEnemy,
-                health = basicEnemyHealth
+                health = basicEnemyHealth,
+                coinReward = basicEnemyCoinReward
             });
         }
 
@@ -125,7 +130,8 @@ public class EnemyManager : MonoBehaviour
             waveSet.Add(new EnemySpawnInfo
             {
                 prefab = fastEnemy,
-                health = fastEnemyHealth
+                health = fastEnemyHealth,
+                coinReward = fastEnemyCoinReward
             });
         }
 
@@ -134,7 +140,8 @@ public class EnemyManager : MonoBehaviour
             waveSet.Add(new EnemySpawnInfo
             {
                 prefab = tankEnemy,
-                health = tankEnemyHealth
+                health = tankEnemyHealth,
+                coinReward = tankEnemyCoinReward
             });
         }
 
@@ -174,7 +181,7 @@ public class EnemyManager : MonoBehaviour
             Enemy enemy = enemyObject.GetComponent<Enemy>();
             if (enemy != null)
             {
-                enemy.Initialize(waveSet[i].health);
+                enemy.Initialize(waveSet[i].health, waveSet[i].coinReward);
             }
 
             yield return new WaitForSeconds(spawnDelay);

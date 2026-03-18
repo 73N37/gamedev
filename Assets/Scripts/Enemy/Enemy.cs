@@ -4,7 +4,7 @@ public class Enemy : MonoBehaviour
 {
     [SerializeField] private float movespeed = 2f;
     [SerializeField] private int maxHealth = 1;
-    [SerializeField] private int reward = 25;
+    [SerializeField] private int reward = 1;
     [SerializeField] private int lifePenalty = 1;
 
     private Rigidbody2D rb;
@@ -20,10 +20,11 @@ public class Enemy : MonoBehaviour
         currentHealth = Mathf.Max(1, maxHealth);
     }
 
-    public void Initialize(int health)
+    public void Initialize(int health, int coinReward)
     {
         maxHealth = Mathf.Max(1, health);
         currentHealth = maxHealth;
+        reward = Mathf.Max(0, coinReward);
     }
 
     void Start()

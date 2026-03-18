@@ -126,12 +126,7 @@ public class GameManager : MonoBehaviour
 
     public void EnemyDefeated(int reward)
     {
-        _ = reward;
-    }
-
-    public void RegisterBalloonHit()
-    {
-        AddCurrency(1);
+        AddCurrency(reward);
     }
 
     public void EnemyEscaped(Enemy enemy, int lifePenalty)
@@ -215,7 +210,7 @@ public class GameManager : MonoBehaviour
             canvasObject.AddComponent<GraphicRaycaster>();
         }
 
-        Font hudFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        Font hudFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         RectTransform hudParent = EnsureHudPanel();
 
         if (livesText == null)

@@ -233,13 +233,16 @@ MonoBehaviour:
   spawnPoint: {fileID: 476666668}
   basicEnemy: {fileID: 8527689348121436776, guid: c477ce6e2a3b0e84ab6f25ac4e002f2f, type: 3}
   basicEnemyCount: 2
-  basicEnemyHealth: 1
+  basicEnemyHealth: 2
+  basicEnemyCoinReward: 1
   fastEnemy: {fileID: 5935498212718778471, guid: fffa0f1e9685adc438e0bda14575163f, type: 3}
   fastEnemyCount: 1
-  fastEnemyHealth: 2
+  fastEnemyHealth: 3
+  fastEnemyCoinReward: 2
   tankEnemy: {fileID: 1318820653800899980, guid: c0f098875d37067419f5381a10971809, type: 3}
   tankEnemyCount: 1
-  tankEnemyHealth: 5
+  tankEnemyHealth: 7
+  tankEnemyCoinReward: 3
   totalWaves: 2
   spawnDelay: 2
   timeBetweenWaves: 2
@@ -606,6 +609,57 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8481184114051718680, guid: c9ba402414b6cbb4c97f15bbdff42b07, type: 3}
   m_PrefabInstance: {fileID: 9212580823358424614}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1931134838
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1931134840}
+  - component: {fileID: 1931134839}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1931134839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1931134838}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 050ba52672d21c947806dbc88d0ec406, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  startingLives: 100
+  startingCurrency: 10
+  enemyManager: {fileID: 327998315}
+  hudCanvas: {fileID: 0}
+  livesText: {fileID: 0}
+  currencyText: {fileID: 0}
+  waveText: {fileID: 0}
+--- !u!4 &1931134840
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1931134838}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1931876202 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8616680417588791853, guid: c9ba402414b6cbb4c97f15bbdff42b07, type: 3}
@@ -802,3 +856,4 @@ SceneRoots:
   - {fileID: 801190839}
   - {fileID: 2980739}
   - {fileID: 2021917501}
+  - {fileID: 1931134840}
