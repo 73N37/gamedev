@@ -40,6 +40,9 @@ public class TowerManager : MonoBehaviour
     // selectedTower stores which tower is currently highlighted in the shop.
     private Tower selectedTower;
 
+    // pendingPlacementTowerPrefab stores which tower type the player is currently trying to place.
+    private Tower pendingPlacementTowerPrefab;
+
     // trackedTowers stores every tower the manager currently knows about in the scene.
     private readonly HashSet<Tower> trackedTowers = new HashSet<Tower>();
 
@@ -50,11 +53,14 @@ public class TowerManager : MonoBehaviour
     public event Action<Tower> TowerSelected;
     public event Action<Tower> TowerPlaced;
     public event Action<Tower, int> TowerSold;
+    public event Action<Tower> PlacementModeChanged;
 
     // These read-only properties expose the manager state safely to the rest of the game.
     public Tower SelectedTower => selectedTower;
+    public Tower PendingPlacementTowerPrefab => pendingPlacementTowerPrefab;
     public int TrackedTowerCount => trackedTowers.Count;
     public float SellRefundPercent => sellRefundPercent;
+    public bool IsPlacingTower => pendingPlacementTowerPrefab != null;
 
     // Runs after a scene loads to guarantee there is always one active TowerManager.
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -91,6 +97,12 @@ public class TowerManager : MonoBehaviour
     private void Update()
     {
         TrySubscribeToGameManager();
+
+        if (HandlePlacementInput())
+        {
+            return;
+        }
+
         HandleTowerSelectionInput();
     }
 
@@ -157,7 +169,7 @@ public class TowerManager : MonoBehaviour
 
         int placementCost = towerPrefab.PlacementCost;
 
-        if (spendCurrency && placementCost > 0)
+        if (spendCurrency && placementCost > 10)
         {
             if (GameManager.main == null || !GameManager.main.TrySpendCurrency(placementCost))
             {
@@ -169,6 +181,37 @@ public class TowerManager : MonoBehaviour
         RegisterTower(placedTower);
         TowerPlaced?.Invoke(placedTower);
         return placedTower;
+    }
+
+    // Called by TowerShopUI when the player chooses a tower type and wants to place it on the map.
+    public bool BeginTowerPlacement(Tower towerPrefab)
+    {
+        if (towerPrefab == null)
+        {
+            return false;
+        }
+
+        if (GameManager.main != null && GameManager.main.IsGameOver)
+        {
+            return false;
+        }
+
+        pendingPlacementTowerPrefab = towerPrefab;
+        CloseTowerShop();
+        PlacementModeChanged?.Invoke(pendingPlacementTowerPrefab);
+        return true;
+    }
+
+    // Called when the player cancels placement mode or after a placement is completed successfully.
+    public void CancelTowerPlacement()
+    {
+        if (pendingPlacementTowerPrefab == null)
+        {
+            return;
+        }
+
+        pendingPlacementTowerPrefab = null;
+        PlacementModeChanged?.Invoke(null);
     }
 
     // Called when the player clicks a tower and wants to inspect or upgrade it.
@@ -495,6 +538,11 @@ public class TowerManager : MonoBehaviour
 
         for (int i = 0; i < hits.Length; i++)
         {
+            if (hits[i].GetComponent<TowerRange>() != null)
+            {
+                continue;
+            }
+
             Tower clickedTower = hits[i].GetComponent<Tower>();
 
             if (clickedTower == null)
@@ -560,7 +608,51 @@ public class TowerManager : MonoBehaviour
         if (isGameOver)
         {
             CloseTowerShop();
+            CancelTowerPlacement();
         }
+    }
+
+    // Runs while the player is in placement mode so the next world click creates a new tower.
+    private bool HandlePlacementInput()
+    {
+        if (pendingPlacementTowerPrefab == null || Mouse.current == null)
+        {
+            return false;
+        }
+
+        if (Mouse.current.rightButton.wasPressedThisFrame)
+        {
+            CancelTowerPlacement();
+            return true;
+        }
+
+        if (!Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            return false;
+        }
+
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
+            return true;
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            return true;
+        }
+
+        Vector3 mouseScreenPosition = Mouse.current.position.ReadValue();
+        Vector3 mouseWorldPosition = mainCamera.ScreenToWorldPoint(mouseScreenPosition);
+        Vector3 placementPosition = new Vector3(mouseWorldPosition.x, mouseWorldPosition.y, pendingPlacementTowerPrefab.transform.position.z);
+
+        Tower placedTower = PlaceTower(pendingPlacementTowerPrefab, placementPosition, Quaternion.identity, true);
+        if (placedTower != null)
+        {
+            CancelTowerPlacement();
+        }
+
+        return true;
     }
 
     // Runs until GameManager exists so the tower systems can react to match-wide state and coin changes.

@@ -35,7 +35,7 @@ public class Tower : MonoBehaviour
 
     // placementCost is the upfront cost used by TowerManager when this tower is placed at runtime.
     [Header("Economy Settings")]
-    [SerializeField] private int placementCost = 0;
+    [SerializeField] private int placementCost = 10;
 
     // These arrays define the cost and effect of each upgrade tier in the shop.
     [Header("Upgrade Settings")]
@@ -62,10 +62,12 @@ public class Tower : MonoBehaviour
     [HideInInspector] public GameObject target;
 
     // These read-only properties let the shop ask the tower about its current stats and upgrade state.
+    // he variables on the right side of the => are the actual values stored on the tower, while the properties on the left are what TowerManager reads to display in the shop and calculate upgrade costs.
+    // These fields can ONLY be modified by the tower itself and are not set directly by the TowerManager script.
     public float Range => range;
-    public int CurrentDamage => damage;
+    public int CurrentDamage => damage; 
     public float CurrentFireRate => fireRate;
-    public int PlacementCost => Mathf.Max(0, placementCost);
+    public int PlacementCost => Mathf.Max(10, placementCost);
     public int RangeUpgradeTier => rangeUpgradeTier;
     public int DamageUpgradeTier => damageUpgradeTier;
     public int FireRateUpgradeTier => fireRateUpgradeTier;
@@ -82,7 +84,7 @@ public class Tower : MonoBehaviour
     // Runs when the tower is created to ensure it can shoot, resize, and be clicked.
     private void Awake()
     {
-        // Find the child range helper so upgrades can resize it later.
+        // Find the child towerRange helper so upgrades can resize it later.
         towerRange = GetComponentInChildren<TowerRange>();
 
         // If no custom shoot point was assigned, fire from the tower's own transform.
@@ -186,7 +188,7 @@ public class Tower : MonoBehaviour
         // Move the range tier forward so the next purchase uses the next tier values.
         rangeUpgradeTier++;
 
-        // Resize the range trigger so targeting matches the new stat immediately.
+        // Resize the towerRange trigger so targeting matches the new stat immediately.
         towerRange?.UpdateRange();
 
         // Refresh the tower shop so the displayed stats and cost update right away.
@@ -269,7 +271,7 @@ public class Tower : MonoBehaviour
         return Mathf.Max(0, Mathf.RoundToInt(totalInvestedCurrency * Mathf.Clamp01(sellRefundPercent)));
     }
 
-    // Runs during setup to give the tower root a small click area separate from its big range trigger.
+    // Runs during setup to give the tower root a small click area separate from its big towerRange trigger.
     private void EnsureClickCollider()
     {
         // Reuse an existing collider if the tower already has one.
@@ -278,7 +280,7 @@ public class Tower : MonoBehaviour
             return;
         }
 
-        // Add a small trigger collider so the player can click the tower without clicking the whole range area.
+        // Add a small trigger collider so the player can click the tower without clicking the whole towerRange area.
         CircleCollider2D towerCollider = gameObject.AddComponent<CircleCollider2D>();
         towerCollider.isTrigger = true;
         towerCollider.radius = 0.6f;
